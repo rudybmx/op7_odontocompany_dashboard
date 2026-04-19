@@ -1,0 +1,383 @@
+@import "tailwindcss";
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import 'reactflow/dist/style.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--ws-glass-bg);
+  --color-card-foreground: var(--ws-text-1);
+  --color-popover: var(--bg);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--gold);
+  --color-primary-foreground: var(--navy);
+  --color-secondary: var(--bg2);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--bg2);
+  --color-muted-foreground: var(--text2);
+  --color-accent: var(--bg2);
+  --color-accent-foreground: var(--text);
+  --color-destructive: #d94e4e;
+  --color-border: var(--border);
+  --color-input: var(--border2);
+  --color-ring: var(--gold);
+  --color-sidebar: var(--navy);
+  --color-sidebar-foreground: #ffffff;
+  --color-sidebar-primary: var(--gold);
+  --color-sidebar-primary-foreground: var(--navy);
+  --color-sidebar-accent: rgba(255, 255, 255, 0.07);
+  --color-sidebar-accent-foreground: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+  --color-sidebar-ring: rgba(255, 255, 255, 0.2);
+  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+  --radius-4xl: 16px;
+}
+
+:root {
+  --bg: #ffffff;
+  --bg2: #f7f7f5;
+  --text: #37352f;
+  --text2: #9b9a97;
+  --border: #e9e9e7;
+  --border2: #e2e1de;
+  --gold: #c9a84c;
+  --gold-light: #d4b86a;
+  --navy: #0f2744;
+  --sidebar-width: 240px;
+  --header-height: 40px;
+  --transition: 150ms ease;
+  --item-height: 28px;
+  --radius-item: 4px;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--ws-glass-bg);
+  --card-border: rgba(15,39,68,0.10);
+  --card-foreground: var(--ws-text-1);
+  --popover: var(--bg);
+  --popover-foreground: var(--text);
+  --primary: var(--gold);
+  --primary-foreground: var(--navy);
+  --secondary: var(--bg2);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg2);
+  --muted-foreground: var(--text2);
+  --accent: var(--bg2);
+  --accent-foreground: var(--text);
+  --destructive: #d94e4e;
+  --border-color: var(--border);
+  --input: var(--border2);
+  --ring: var(--gold);
+  --radius: 0.375rem;
+  --sidebar: var(--navy);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--gold);
+  --sidebar-primary-foreground: var(--navy);
+  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(255, 255, 255, 0.2);
+}
+
+.dark {
+  --bg: #1e1e1e;
+  --bg2: #252525;
+  --text: #e3e3e0;
+  --text2: #6b6b6b;
+  --border: #2d2d2d;
+  --border2: #2a2a2a;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--ws-glass-bg);
+  --card-border: rgba(255,255,255,0.08);
+  --card-foreground: var(--ws-text-1);
+  --popover: var(--bg);
+  --popover-foreground: var(--text);
+  --secondary: var(--bg2);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg2);
+  --muted-foreground: var(--text2);
+  --accent: #282828;
+  --accent-foreground: var(--text);
+  --border-color: var(--border);
+  --input: var(--border2);
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+  outline-color: color-mix(in srgb, var(--gold) 45%, transparent);
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 26%, transparent);
+  color: var(--text);
+}
+
+/* ============================================
+   WER'SUN DESIGN SYSTEM — TOKENS v2.0
+   Glassmorphism Light + Dark
+   ============================================ */
+
+:root {
+  /* BASE */
+  --ws-navy:          #0E142A;
+  --ws-navy-2:        #141C38;
+  --ws-navy-3:        #1A2444;
+
+  /* PALETA VIBRANTE */
+  --ws-blue:          #3E5BFF;
+  --ws-blue-soft:     rgba(62, 91, 255, 0.12);
+  --ws-cyan:          #00F5FF;
+  --ws-cyan-dark:     #00b8c8;
+  --ws-purple:        #7A5AF8;
+  --ws-purple-soft:   rgba(122, 90, 248, 0.12);
+  --ws-coral:         #FF5C8D;
+  --ws-coral-soft:    rgba(255, 92, 141, 0.12);
+  --ws-green:         #0fa856;
+  --ws-green-soft:    rgba(15, 168, 86, 0.12);
+  --ws-gold:          #c9a84c;
+  --ws-gold-soft:     rgba(201, 168, 76, 0.12);
+  --ws-gold-border:   rgba(201, 168, 76, 0.30);
+
+  /* GLASS LIGHT */
+  --ws-glass-bg:            rgba(255, 255, 255, 0.72);
+  --ws-glass-bg-hover:      rgba(255, 255, 255, 0.88);
+  --ws-glass-border:        rgba(255, 255, 255, 0.35);
+  --ws-glass-border-strong: rgba(255, 255, 255, 0.55);
+  --ws-glass-shadow:        0 8px 32px rgba(14, 20, 42, 0.12), 0 2px 8px rgba(14, 20, 42, 0.08);
+  --ws-glass-shadow-lg:     0 16px 48px rgba(14, 20, 42, 0.18), 0 4px 16px rgba(14, 20, 42, 0.10);
+  --ws-glass-shadow-sm:     0 4px 16px rgba(14, 20, 42, 0.08), 0 1px 4px rgba(14, 20, 42, 0.06);
+
+  /* PAGE BG LIGHT */
+  --ws-page-bg:       linear-gradient(135deg, #f0f6ff 0%, #e8f2ff 40%, #eef5ff 100%);
+  --ws-sidebar-bg:    rgba(255, 255, 255, 0.55);
+  --ws-sidebar-border:rgba(255, 255, 255, 0.50);
+
+  /* TEXT LIGHT */
+  --ws-text-1:        #0E142A;
+  --ws-text-2:        #4a5580;
+  --ws-text-3:        #8892b0;
+  --ws-divider:       rgba(14, 20, 42, 0.06);
+
+  /* SURFACES LIGHT */
+  --ws-surface:       #ffffff;
+  --ws-surface-2:     #f5f7fb;
+  --ws-card-active:   rgba(255, 255, 255, 0.90);
+  --ws-card-hover:    rgba(255, 255, 255, 0.70);
+  --ws-pill-alpha:    0.12;
+
+  /* RADIUS */
+  --ws-radius-sm:     6px;
+  --ws-radius-md:     10px;
+  --ws-radius-lg:     14px;
+  --ws-radius-xl:     18px;
+  --ws-radius-full:   9999px;
+
+  /* TRANSITIONS */
+  --ws-transition:    all 0.18s ease;
+  --ws-transition-slow: all 0.28s ease;
+}
+
+.dark {
+  /* GLASS DARK */
+  --ws-glass-bg:            rgba(255, 255, 255, 0.06);
+  --ws-glass-bg-hover:      rgba(255, 255, 255, 0.10);
+  --ws-glass-border:        rgba(255, 255, 255, 0.10);
+  --ws-glass-border-strong: rgba(255, 255, 255, 0.18);
+  --ws-glass-shadow:        0 8px 32px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.30);
+  --ws-glass-shadow-lg:     0 16px 48px rgba(0, 0, 0, 0.50), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --ws-glass-shadow-sm:     0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.20);
+
+  /* PAGE BG DARK */
+  --ws-page-bg:       linear-gradient(135deg, #0E142A 0%, #141C38 50%, #0E142A 100%);
+  --ws-sidebar-bg:    rgba(14, 20, 42, 0.85);
+  --ws-sidebar-border:rgba(255, 255, 255, 0.08);
+
+  /* TEXT DARK */
+  --ws-text-1:        #ffffff;
+  --ws-text-2:        rgba(255, 255, 255, 0.55);
+  --ws-text-3:        rgba(255, 255, 255, 0.30);
+  --ws-divider:       rgba(255, 255, 255, 0.06);
+
+  /* SURFACES DARK */
+  --ws-surface:       #1a2244;
+  --ws-surface-2:     #141c38;
+  --ws-card-active:   rgba(255, 255, 255, 0.10);
+  --ws-card-hover:    rgba(255, 255, 255, 0.06);
+  --ws-pill-alpha:    0.18;
+
+  /* CYAN for graphs in dark */
+  --ws-cyan-dark:     #00F5FF;
+
+  /* GOLD — same in dark */
+  --ws-gold:          #c9a84c;
+  --ws-gold-soft:     rgba(201, 168, 76, 0.12);
+  --ws-gold-border:   rgba(201, 168, 76, 0.30);
+}
+
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: rgba(15,39,68,0.20);
+  --xy-edge-stroke-width: 2;
+  --xy-selection-background-color: rgba(201,168,76,0.08);
+  --xy-selection-border-color: rgba(201,168,76,0.40);
+}
+
+.dark .react-flow {
+  --xy-edge-stroke: rgba(255,255,255,0.20);
+}
+
+.react-flow__controls-button {
+  background: var(--card) !important;
+  border-color: rgba(15,39,68,0.10) !important;
+  color: var(--foreground) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--muted) !important;
+}
+
+.react-flow__handle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+/* ============================================
+   SIDEBAR NAVY — always dark regardless of theme
+   ============================================ */
+.sidebar-navy {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    rgba(30, 40, 80, 0.97) 0%,
+    rgba(14, 20, 42, 0.99) 45%,
+    rgba(10, 15, 35, 1.0) 100%
+  ) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.04), 4px 0 24px rgba(0,0,0,0.25);
+  color: #ffffff !important;
+  color-scheme: dark;
+}
+
+.sidebar-navy::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.12) 30%,
+    rgba(255,255,255,0.06) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sidebar-navy * {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-navy ::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Nav group — active state (contains current route) */
+.sidebar-group-active {
+  background: linear-gradient(135deg, rgba(62,91,255,0.18) 0%, rgba(122,90,248,0.10) 100%) !important;
+  border: 1px solid rgba(62,91,255,0.25) !important;
+}
+
+/* Sub-items tree wrapper */
+.sidebar-subitems {
+  margin-left: 28px;
+  padding-left: 12px;
+  padding-bottom: 6px;
+  border-left: 1px solid rgba(255,255,255,0.10);
+}
+
+/* Sub-item connector line */
+.sidebar-subitem {
+  position: relative;
+}
+
+.sidebar-subitem::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+  pointer-events: none;
+}
+
+.sidebar-subitem-active::before {
+  background: rgba(62,91,255,0.60) !important;
+}
+
+/* User card logout hover */
+.sidebar-logout-btn {
+  color: rgba(255,255,255,0.30);
+  transition: color 0.15s ease;
+}
+
+.sidebar-logout-btn:hover {
+  color: rgba(255,255,255,0.70);
+}
+
+/* ============================================
+   FONT GLOBAL FIX
+   Garante Plus Jakarta Sans no body e em
+   elementos portalizados (Popover, Dialog,
+   Dropdown, Toast — position: fixed/portal)
+   ============================================ */
+body {
+  font-family: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-radix-popper-content-wrapper],
+[data-radix-portal] {
+  font-family: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+
