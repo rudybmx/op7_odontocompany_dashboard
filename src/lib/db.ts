@@ -1,12 +1,13 @@
 import postgres from 'postgres'
 
-const connectionString = process.env.DATABASE_URL
-
-// Cliente postgres para queries - lazy init pra nao falhar no build
+// Cliente postgres para queries - lazy init pra nao falhar no build.
+// IMPORTANTE: ler DATABASE_URL dentro do getSql(), não no topo do módulo,
+// porque o Next pode avaliar o arquivo durante build sem as envs de runtime.
 let _sql: ReturnType<typeof postgres> | null = null
 
 export function getSql() {
   if (!_sql) {
+    const connectionString = process.env['DATABASE_URL']
     if (!connectionString) {
       throw new Error('DATABASE_URL nao configurada')
     }

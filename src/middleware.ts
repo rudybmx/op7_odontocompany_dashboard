@@ -20,10 +20,12 @@ export function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get(COOKIE)
   const isAuthenticated = !!sessionCookie?.value
 
-  // Rotas publicas (login, assets, api de auth)
+  // Rotas publicas (login, assets, api de auth, health, whatsapp)
   const isPublic = pathname.startsWith('/login')
     || pathname.startsWith('/_next')
     || pathname.startsWith('/api/auth')
+    || pathname.startsWith('/api/health')
+    || pathname.startsWith('/api/whatsapp')
     || pathname === '/favicon.ico'
 
   if (isPublic) {

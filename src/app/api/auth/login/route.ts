@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
-import { verifyPassword, hashPassword } from '@/lib/password'
+import { verifyPassword } from '@/lib/password'
 import { createToken } from '@/lib/jwt'
 import type { NextRequest } from 'next/server'
 
@@ -13,9 +13,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email e senha sao obrigatorios' }, { status: 400 })
     }
 
-    // Busca usuario
+    // Busca usuario no GoTrue (auth.users)
     const usuarios = await sql`
-      SELECT id, email, password_hash, status FROM public.usuarios WHERE email = ${email}
+      SELECT 
+        u.id, 
+        u.email, 
+        u.encrypted_password,
+        u.raw_user_meta_data,
+        COALESCE(p.full_name, u.email) as nome
+      FROM auth.users u
+      LEFT JOIN public.user_profiles p ON p.id = u.id
+      WHERE u.email = ${email}
+        AND u.deleted_at IS NULL
     `
 
     if (usuarios.length === 0) {
@@ -24,30 +33,41 @@ export async function POST(req: NextRequest) {
 
     const user = usuarios[0]
 
-    if (user.status !== 'ativo') {
-      return NextResponse.json({ error: 'Conta suspensa ou nao verificada' }, { status: 403 })
+    // Verifica senha com bcrypt (GoTrue usa bcrypt)
+    if (!user.encrypted_password) {
+      return NextResponse.json({ error: 'Conta configurada sem senha. Use login social ou redefina sua senha.' }, { status: 401 })
     }
 
-    const valid = await verifyPassword(password, user.password_hash)
+    const valid = await verifyPassword(password, user.encrypted_password)
     if (!valid) {
       return NextResponse.json({ error: 'Credenciais invalidas' }, { status: 401 })
     }
 
-    // Busca perfil
-    const perfis = await sql`
-      SELECT nivel, org_id FROM public.perfis WHERE id = ${user.id}
+    // Busca nivel e org via org_members
+    const membros = await sql`
+      SELECT 
+        m.org_id,
+        m.role,
+        o.level as org_level
+      FROM public.org_members m
+      JOIN public.organizations o ON o.id = m.org_id
+      WHERE m.user_id = ${user.id}
+        AND m.is_active = true
+        AND o.is_active = true
+        AND o.deleted_at IS NULL
+      ORDER BY o.level ASC
+      LIMIT 1
     `
-    const perfil = perfis[0] || { nivel: 99, org_id: null }
 
-    // Atualiza last_login
-    await sql`UPDATE public.usuarios SET last_login_at = NOW() WHERE id = ${user.id}`
+    const membro = membros[0]
+    const nivel = membro?.org_level ?? 99
 
     // Gera tokens
     const access_token = await createToken({
       sub: user.id,
       email: user.email,
-      level: perfil.nivel,
-      org_id: perfil.org_id,
+      level: nivel,
+      org_id: membro?.org_id ?? null,
     }, '1h')
 
     const refresh_token = await createToken({
@@ -55,11 +75,21 @@ export async function POST(req: NextRequest) {
       type: 'refresh',
     }, '7d')
 
-    // Salva refresh token
-    const refresh_hash = await hashPassword(refresh_token)
+    // Salva refresh token no auth.refresh_tokens (GoTrue)
+    const bcrypt = await import('bcryptjs')
+    const refresh_hash = await bcrypt.hash(refresh_token, 12)
     await sql`
-      INSERT INTO public.refresh_tokens (user_id, token_hash, expires_at)
-      VALUES (${user.id}, ${refresh_hash}, NOW() + INTERVAL '7 days')
+      INSERT INTO auth.refresh_tokens 
+        (instance_id, user_id, token, session_id, created_at, updated_at)
+      VALUES 
+        ('00000000-0000-0000-0000-000000000000', ${user.id}, ${refresh_hash}, NULL, NOW(), NOW())
+    `
+
+    // Atualiza last_sign_in_at no GoTrue
+    await sql`
+      UPDATE auth.users 
+      SET last_sign_in_at = NOW() 
+      WHERE id = ${user.id}
     `
 
     return NextResponse.json({
@@ -68,6 +98,7 @@ export async function POST(req: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
+        nome: user.nome,
       },
     })
 

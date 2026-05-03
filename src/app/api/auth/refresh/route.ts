@@ -25,47 +25,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Refresh token invalido' }, { status: 401 })
     }
 
-    // Busca tokens validos no banco para este usuario
-    const tokens = await sql`
-      SELECT id, token_hash FROM public.refresh_tokens
-      WHERE user_id = ${payload.sub}
-        AND revoked_at IS NULL
-        AND expires_at > NOW()
-      ORDER BY created_at DESC
+    // Busca usuario no GoTrue
+    const usuarios = await sql`
+      SELECT id, email, raw_user_meta_data
+      FROM auth.users
+      WHERE id = ${payload.sub}
+        AND deleted_at IS NULL
     `
-
-    // Verifica se algum token no banco corresponde ao que foi enviado
-    let validTokenId = null
-    for (const t of tokens) {
-      if (await verifyPassword(refresh_token, t.token_hash)) {
-        validTokenId = t.id
-        break
-      }
-    }
-
-    if (!validTokenId) {
-      return NextResponse.json({ error: 'Refresh token revogado ou expirado' }, { status: 401 })
-    }
-
-    // Revoga o token antigo
-    await sql`UPDATE public.refresh_tokens SET revoked_at = NOW() WHERE id = ${validTokenId}`
-
-    // Busca usuario e perfil
-    const usuarios = await sql`SELECT id, email, status FROM public.usuarios WHERE id = ${payload.sub}`
     if (usuarios.length === 0) {
       return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 401 })
     }
 
     const user = usuarios[0]
-    const perfis = await sql`SELECT nivel, org_id FROM public.perfis WHERE id = ${user.id}`
-    const perfil = perfis[0] || { nivel: 99, org_id: null }
+
+    // Busca nivel e org via org_members
+    const membros = await sql`
+      SELECT 
+        m.org_id,
+        m.role,
+        o.level as org_level
+      FROM public.org_members m
+      JOIN public.organizations o ON o.id = m.org_id
+      WHERE m.user_id = ${user.id}
+        AND m.is_active = true
+        AND o.is_active = true
+        AND o.deleted_at IS NULL
+      ORDER BY o.level ASC
+      LIMIT 1
+    `
+    const membro = membros[0]
+    const nivel = membro?.org_level ?? 99
 
     // Gera novos tokens
     const new_access_token = await createToken({
       sub: user.id,
       email: user.email,
-      level: perfil.nivel,
-      org_id: perfil.org_id,
+      level: nivel,
+      org_id: membro?.org_id ?? null,
     }, '1h')
 
     const new_refresh_token = await createToken({
@@ -73,11 +69,13 @@ export async function POST(req: NextRequest) {
       type: 'refresh',
     }, '7d')
 
-    // Salva novo refresh token
+    // Salva novo refresh token no auth.refresh_tokens
     const refresh_hash = await hashPassword(new_refresh_token)
     await sql`
-      INSERT INTO public.refresh_tokens (user_id, token_hash, expires_at)
-      VALUES (${user.id}, ${refresh_hash}, NOW() + INTERVAL '7 days')
+      INSERT INTO auth.refresh_tokens 
+        (instance_id, user_id, token, session_id, created_at, updated_at)
+      VALUES 
+        ('00000000-0000-0000-0000-000000000000', ${user.id}, ${refresh_hash}, NULL, NOW(), NOW())
     `
 
     return NextResponse.json({

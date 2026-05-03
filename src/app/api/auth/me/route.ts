@@ -8,22 +8,27 @@ export async function GET(req: NextRequest) {
   if (!user) return unauthorized()
 
   try {
+    // Busca perfil via user_profiles + org_members
     const perfis = await sql`
       SELECT 
-        p.id,
-        p.nome,
-        p.email,
+        u.id,
+        u.email,
+        COALESCE(p.full_name, u.email) as nome,
         p.avatar_url,
-        p.telefone,
-        p.nivel,
-        p.cargo,
-        p.status,
-        p.org_id,
-        o.nome as org_nome,
-        o.slug as org_slug
-      FROM public.perfis p
-      LEFT JOIN public.organizacoes o ON o.id = p.org_id
-      WHERE p.id = ${user.id}
+        p.phone as telefone,
+        m.role as cargo,
+        m.org_id,
+        o.name as org_nome,
+        o.slug as org_slug,
+        o.level as nivel
+      FROM auth.users u
+      LEFT JOIN public.user_profiles p ON p.id = u.id
+      LEFT JOIN public.org_members m ON m.user_id = u.id AND m.is_active = true
+      LEFT JOIN public.organizations o ON o.id = m.org_id AND o.is_active = true AND o.deleted_at IS NULL
+      WHERE u.id = ${user.id}
+        AND u.deleted_at IS NULL
+      ORDER BY o.level ASC
+      LIMIT 1
     `
 
     if (perfis.length === 0) {

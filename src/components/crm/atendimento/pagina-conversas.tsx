@@ -13,23 +13,22 @@ import {
   Mic, 
   Sparkles,
   Smartphone,
-  MessageSquare,
   MessageCircle as Instagram,
-  MessageSquare as Facebook,
-  MoreVertical,
-  ChevronDown
+  MessageSquare as Facebook
 } from 'lucide-react'
 
 // ─── Tipos Internos ───────────────────────────────────────────────────────────
 
 type CanalConversa = 'whatsapp' | 'messenger' | 'instagram_dm'
-type StatusConversa = 'nova' | 'em_atendimento' | 'aguardando' | 'resolvida'
+type StatusConversa = 'nova' | 'em_atendimento' | 'aguardando' | 'resolvida' | 'arquivada'
 type RemetenteMsg = 'contato' | 'agente' | 'ia'
 
 interface Contato {
   id: string; 
   nome: string; 
   telefone: string
+  remoteJid?: string
+  avatarUrl?: string | null
   avatarInitials: string; 
   cor: string
   canal: CanalConversa; 
@@ -44,6 +43,7 @@ interface Mensagem {
   remetenteTipo: RemetenteMsg; 
   hora: string
   data: string // "Hoje", "Ontem" ou "DD/MM" para agrupamento
+  timestampAt?: number
 }
 
 interface Conversa {
@@ -55,99 +55,12 @@ interface Conversa {
   naoLidas: number
   ultimaMensagem: string; 
   ultimaMensagemEm: string
+  ultimaMensagemAt?: number
   tags: string[]; 
   agente: string
   mensagens: Mensagem[]
   campanha?: string
 }
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const CONVERSAS_MOCK: Conversa[] = [
-  {
-    id: 'c1',
-    contato: { id: 'u1', nome: 'Ricardo Santos', telefone: '+55 11 99888-7766', avatarInitials: 'RS', cor: '#3E5BFF', canal: 'whatsapp', online: true },
-    status: 'em_atendimento',
-    canal: 'whatsapp',
-    iaAtiva: true,
-    naoLidas: 2,
-    ultimaMensagem: 'Gostaria de saber o valor do clareamento.',
-    ultimaMensagemEm: '09:42',
-    tags: ['Lead Quente', 'Clareamento'],
-    agente: 'IA Agente',
-    campanha: 'Google Ads - Estética',
-    mensagens: [
-      { id: 'm1', direcao: 'entrada', conteudo: 'Olá, bom dia!', remetenteNome: 'Ricardo Santos', remetenteTipo: 'contato', hora: '09:40', data: 'Hoje' },
-      { id: 'm2', direcao: 'saida', conteudo: 'Olá Ricardo! Sou o assistente virtual da Tuler Odontologia. Como posso te ajudar hoje?', remetenteNome: 'IA Agente', remetenteTipo: 'ia', hora: '09:41', data: 'Hoje' },
-      { id: 'm3', direcao: 'entrada', conteudo: 'Gostaria de saber o valor do clareamento.', remetenteNome: 'Ricardo Santos', remetenteTipo: 'contato', hora: '09:42', data: 'Hoje' },
-    ]
-  },
-  {
-    id: 'c2',
-    contato: { id: 'u2', nome: 'Juliana Paiva', telefone: '@jup_paiva', avatarInitials: 'JP', cor: '#FF5C8D', canal: 'instagram_dm', online: true },
-    status: 'em_atendimento',
-    canal: 'instagram_dm',
-    iaAtiva: false,
-    naoLidas: 0,
-    ultimaMensagem: 'Pode deixar, estarei aí às 14h!',
-    ultimaMensagemEm: '10:15',
-    tags: ['Agendado'],
-    agente: 'Ana Lima',
-    campanha: 'Instagram - Influencers',
-    mensagens: [
-      { id: 'm4', direcao: 'entrada', conteudo: 'Oi! Vi o post de vocês e amei as lentes.', remetenteNome: 'Juliana Paiva', remetenteTipo: 'contato', hora: '09:00', data: 'Hoje' },
-      { id: 'm5', direcao: 'saida', conteudo: 'Olá Juliana! Que bom que gostou. Temos horários disponíveis para avaliação esta tarde.', remetenteNome: 'Ana Lima', remetenteTipo: 'agente', hora: '09:10', data: 'Hoje' },
-      { id: 'm6', direcao: 'entrada', conteudo: 'Pode deixar, estarei aí às 14h!', remetenteNome: 'Juliana Paiva', remetenteTipo: 'contato', hora: '10:15', data: 'Hoje' },
-    ]
-  },
-  {
-    id: 'c3',
-    contato: { id: 'u3', nome: 'Marcos Oliveira', telefone: 'facebook.com/marcos.ol', avatarInitials: 'MO', cor: '#7A5AF8', canal: 'messenger', online: false },
-    status: 'nova',
-    canal: 'messenger',
-    iaAtiva: true,
-    naoLidas: 1,
-    ultimaMensagem: 'Vocês atendem convênio Bradesco?',
-    ultimaMensagemEm: 'Ontem',
-    tags: ['Dúvida Convênio'],
-    agente: 'Pendente',
-    mensagens: [
-      { id: 'm7', direcao: 'entrada', conteudo: 'Boa tarde, tudo bem?', remetenteNome: 'Marcos Oliveira', remetenteTipo: 'contato', hora: '15:20', data: 'Ontem' },
-      { id: 'm8', direcao: 'saida', conteudo: 'Olá Marcos! Tudo ótimo. Como a Tuler Odontologia pode te ajudar?', remetenteNome: 'IA Agente', remetenteTipo: 'ia', hora: '15:21', data: 'Ontem' },
-      { id: 'm9', direcao: 'entrada', conteudo: 'Vocês atendem convênio Bradesco?', remetenteNome: 'Marcos Oliveira', remetenteTipo: 'contato', hora: '15:25', data: 'Ontem' },
-    ]
-  },
-  {
-    id: 'c4',
-    contato: { id: 'u4', nome: 'Fernanda Lima', telefone: '+55 11 97777-6655', avatarInitials: 'FL', cor: '#0fa856', canal: 'whatsapp', online: false },
-    status: 'aguardando',
-    canal: 'whatsapp',
-    iaAtiva: true,
-    naoLidas: 0,
-    ultimaMensagem: 'Vou confirmar com meu marido e te aviso.',
-    ultimaMensagemEm: 'Ontem',
-    tags: ['Follow-up'],
-    agente: 'Carlos Melo',
-    mensagens: [
-      { id: 'm10', direcao: 'entrada', conteudo: 'Vou confirmar com meu marido e te aviso.', remetenteNome: 'Fernanda Lima', remetenteTipo: 'contato', hora: '18:00', data: 'Ontem' },
-    ]
-  },
-  {
-    id: 'c5',
-    contato: { id: 'u5', nome: 'Bruno Rocha', telefone: '+55 11 96666-5544', avatarInitials: 'BR', cor: '#EF9F27', canal: 'whatsapp', online: true },
-    status: 'resolvida',
-    canal: 'whatsapp',
-    iaAtiva: false,
-    naoLidas: 0,
-    ultimaMensagem: 'Obrigado pelo atendimento!',
-    ultimaMensagemEm: '19/04',
-    tags: ['Finalizado'],
-    agente: 'Ana Lima',
-    mensagens: [
-      { id: 'm11', direcao: 'entrada', conteudo: 'Obrigado pelo atendimento!', remetenteNome: 'Bruno Rocha', remetenteTipo: 'contato', hora: '14:30', data: '19/04' },
-    ]
-  }
-]
 
 const CANAL_COLORS = {
   whatsapp: '#25D366',
@@ -161,15 +74,154 @@ const CANAL_ICONS = {
   instagram_dm: Instagram
 }
 
+type ApiMensagem = {
+  id: string
+  direcao: 'entrada' | 'saida'
+  conteudo: string
+  remetenteNome?: string | null
+  remetenteTipo?: RemetenteMsg | 'sistema'
+  enviadaEm?: string | null
+  recebidaEm?: string | null
+  criadaEm?: string | null
+}
+
+type ApiConversa = {
+  id: string
+  instance: string
+  remoteJid: string
+  status: StatusConversa
+  iaAtiva: boolean
+  naoLidas: number
+  ultimaMensagem: string
+  ultimaMensagemAt?: string | null
+  agente: string
+  campanha?: string | null
+  canal: CanalConversa
+  tags: string[]
+  contato: {
+    id: string
+    nome: string
+    telefone: string
+    remoteJid: string
+    avatarUrl?: string | null
+  }
+  mensagens: ApiMensagem[]
+}
+
+function iniciais(nome: string) {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (partes.length === 0) return 'WA'
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase()
+}
+
+function formatarHora(valor?: string, timestamp?: number) {
+  const data = timestamp
+    ? new Date(timestamp * 1000)
+    : valor
+      ? new Date(valor)
+      : new Date()
+
+  if (Number.isNaN(data.getTime())) return '--:--'
+  return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatarData(valor?: string, timestamp?: number) {
+  const data = timestamp
+    ? new Date(timestamp * 1000)
+    : valor
+      ? new Date(valor)
+      : new Date()
+
+  if (Number.isNaN(data.getTime())) return 'Hoje'
+
+  const hoje = new Date()
+  const ontem = new Date()
+  ontem.setDate(hoje.getDate() - 1)
+
+  if (data.toDateString() === hoje.toDateString()) return 'Hoje'
+  if (data.toDateString() === ontem.toDateString()) return 'Ontem'
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
+function dataMensagemApi(mensagem: ApiMensagem) {
+  return mensagem.enviadaEm || mensagem.recebidaEm || mensagem.criadaEm || new Date().toISOString()
+}
+
+function mensagemApiParaMensagem(mensagem: ApiMensagem, nomeContato: string): Mensagem {
+  const quando = dataMensagemApi(mensagem)
+  const timestampAt = Date.parse(quando)
+  const remetenteTipo = mensagem.remetenteTipo === 'ia'
+    ? 'ia'
+    : mensagem.direcao === 'saida'
+      ? 'agente'
+      : 'contato'
+
+  return {
+    id: mensagem.id,
+    direcao: mensagem.direcao,
+    conteudo: mensagem.conteudo,
+    remetenteNome: mensagem.remetenteNome || (mensagem.direcao === 'saida' ? 'Você' : nomeContato),
+    remetenteTipo,
+    hora: formatarHora(quando),
+    data: formatarData(quando),
+    timestampAt: Number.isNaN(timestampAt) ? Date.now() : timestampAt,
+  }
+}
+
+function apiConversaParaConversa(api: ApiConversa): Conversa {
+  const ultimaAt = api.ultimaMensagemAt ? Date.parse(api.ultimaMensagemAt) : undefined
+  return {
+    id: api.id,
+    contato: {
+      id: api.contato.id,
+      nome: api.contato.nome,
+      telefone: api.contato.telefone,
+      remoteJid: api.contato.remoteJid || api.remoteJid,
+      avatarUrl: api.contato.avatarUrl,
+      avatarInitials: iniciais(api.contato.nome),
+      cor: '#25D366',
+      canal: 'whatsapp',
+      online: true,
+    },
+    status: api.status,
+    canal: 'whatsapp',
+    iaAtiva: api.iaAtiva,
+    naoLidas: api.naoLidas,
+    ultimaMensagem: api.ultimaMensagem,
+    ultimaMensagemEm: api.ultimaMensagemAt ? formatarHora(api.ultimaMensagemAt) : '',
+    ultimaMensagemAt: ultimaAt && !Number.isNaN(ultimaAt) ? ultimaAt : undefined,
+    tags: api.tags?.length ? api.tags : ['WhatsApp', 'Evolution'],
+    agente: api.agente || 'Wersun',
+    campanha: api.campanha || undefined,
+    mensagens: (api.mensagens || []).map((msg) => mensagemApiParaMensagem(msg, api.contato.nome)),
+  }
+}
+
+function agruparMensagensPorData(mensagens: Mensagem[]) {
+  return mensagens.reduce<Array<{ data: string; mensagens: Mensagem[] }>>((grupos, mensagem) => {
+    const ultimo = grupos[grupos.length - 1]
+    if (ultimo?.data === mensagem.data) {
+      ultimo.mensagens.push(mensagem)
+    } else {
+      grupos.push({ data: mensagem.data, mensagens: [mensagem] })
+    }
+    return grupos
+  }, [])
+}
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function PaginaConversas() {
-  const [conversas, setConversas] = useState<Conversa[]>(CONVERSAS_MOCK)
-  const [conversaSelecionadaId, setConversaSelecionadaId] = useState<string | null>('c1')
+  const [conversas, setConversas] = useState<Conversa[]>([])
+  const [conversaSelecionadaId, setConversaSelecionadaId] = useState<string | null>(null)
   const [filtroAtivo, setFiltroAtivo] = useState<'todas'|'novos'|'meus'|'outros'>('todas')
   const [filtroPrincipal, setFiltroPrincipal] = useState<'todas'|'nao_lidas'>('todas')
   const [busca, setBusca] = useState('')
   const [textoMensagem, setTextoMensagem] = useState('')
+  const [isEnviando, setIsEnviando] = useState(false)
+  const [isCarregando, setIsCarregando] = useState(true)
+  const [erroIntegracao, setErroIntegracao] = useState<string | null>(null)
   
   const mensagensEndRef = useRef<HTMLDivElement>(null)
 
@@ -177,37 +229,111 @@ export function PaginaConversas() {
     conversas.find(c => c.id === conversaSelecionadaId)
   , [conversas, conversaSelecionadaId])
 
+  const gruposMensagens = useMemo(() => 
+    agruparMensagensPorData(conversaSelecionada?.mensagens || [])
+  , [conversaSelecionada?.mensagens])
+
+  // Carregar conversas reais do Postgres e manter polling estilo WhatsApp Web
+  useEffect(() => {
+    let cancelado = false
+
+    async function carregarConversas() {
+      try {
+        const response = await fetch('/api/whatsapp/conversations?limit=120', { cache: 'no-store' })
+        const data = await response.json().catch(() => null)
+
+        if (!response.ok) {
+          throw new Error(data?.error || 'Falha ao carregar conversas')
+        }
+
+        const normalizadas = ((data?.conversations || []) as ApiConversa[]).map(apiConversaParaConversa)
+        if (cancelado) return
+
+        setConversas(normalizadas)
+        setErroIntegracao(null)
+        setConversaSelecionadaId((atual) => {
+          if (atual && normalizadas.some((conversa) => conversa.id === atual)) return atual
+          return normalizadas[0]?.id || null
+        })
+      } catch (error) {
+        if (!cancelado) {
+          setErroIntegracao(error instanceof Error ? error.message : 'Erro inesperado na integração')
+        }
+      } finally {
+        if (!cancelado) setIsCarregando(false)
+      }
+    }
+
+    carregarConversas()
+    const intervalo = window.setInterval(carregarConversas, 3000)
+
+    return () => {
+      cancelado = true
+      window.clearInterval(intervalo)
+    }
+  }, [])
+
   // Auto-scroll
   useEffect(() => {
     mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [conversaSelecionadaId, conversaSelecionada?.mensagens.length])
 
   // Handlers
-  function enviarMensagem() {
-    if (!textoMensagem.trim() || !conversaSelecionadaId) return
-    
-    const nova: Mensagem = {
-      id: `msg-${Date.now()}`, 
-      direcao: 'saida',
-      conteudo: textoMensagem.trim(),
-      remetenteNome: 'Você', 
-      remetenteTipo: 'agente',
-      hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      data: 'Hoje'
-    }
+  async function enviarMensagem() {
+    if (!textoMensagem.trim() || !conversaSelecionada) return
 
-    setConversas(cs => cs.map(c =>
-      c.id === conversaSelecionadaId
-        ? { 
-            ...c, 
-            mensagens: [...c.mensagens, nova],
-            ultimaMensagem: nova.conteudo,
-            ultimaMensagemEm: nova.hora,
-            naoLidas: 0 
-          }
-        : c
-    ))
-    setTextoMensagem('')
+    const conteudo = textoMensagem.trim()
+    const telefoneDestino = conversaSelecionada.contato.remoteJid || conversaSelecionada.contato.telefone
+
+    if (!telefoneDestino) return
+
+    setIsEnviando(true)
+
+    try {
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          number: telefoneDestino,
+          text: conteudo,
+        }),
+      })
+
+      const result = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(result?.error || 'Falha ao enviar mensagem')
+      }
+
+      const nova: Mensagem = {
+        id: `msg-${Date.now()}`,
+        direcao: 'saida',
+        conteudo,
+        remetenteNome: 'Você',
+        remetenteTipo: 'agente',
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        data: 'Hoje',
+        timestampAt: Date.now(),
+      }
+
+      setConversas(cs => cs.map(c =>
+        c.id === conversaSelecionadaId
+          ? {
+              ...c,
+              mensagens: [...c.mensagens, nova],
+              ultimaMensagem: nova.conteudo,
+              ultimaMensagemEm: nova.hora,
+              naoLidas: 0
+            }
+          : c
+      ))
+      setTextoMensagem('')
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error)
+    } finally {
+      setIsEnviando(false)
+    }
   }
 
   const handleToggleIA = () => {
@@ -220,6 +346,7 @@ export function PaginaConversas() {
   const conversasFiltradas = useMemo(() => {
     return conversas.filter(c => {
       const matchBusca = c.contato.nome.toLowerCase().includes(busca.toLowerCase()) || 
+                         c.contato.telefone.toLowerCase().includes(busca.toLowerCase()) ||
                          c.ultimaMensagem.toLowerCase().includes(busca.toLowerCase())
       const matchFiltroPrin = filtroPrincipal === 'nao_lidas' ? c.naoLidas > 0 : true
       
@@ -249,6 +376,10 @@ export function PaginaConversas() {
         
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ws-text-1)', margin: 0 }}>Conversas</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: erroIntegracao ? '#FF5C8D' : '#25D366' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: erroIntegracao ? '#FF5C8D' : '#25D366' }} />
+            {erroIntegracao ? `Erro Evolution: ${erroIntegracao}` : isCarregando ? 'Conectando ao WhatsApp...' : 'WhatsApp conectado em tempo real'}
+          </div>
           
           <div style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ws-text-3)' }} />
@@ -318,6 +449,13 @@ export function PaginaConversas() {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin' }}>
+          {conversasFiltradas.length === 0 && (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--ws-text-3)', fontSize: 12, lineHeight: 1.5 }}>
+              {isCarregando
+                ? 'Carregando conversas do WhatsApp...'
+                : 'Nenhuma conversa real chegou ainda. Envie uma mensagem para o número conectado e ela aparecerá aqui automaticamente.'}
+            </div>
+          )}
           {conversasFiltradas.map(conversa => {
             const isAtivo = conversaSelecionadaId === conversa.id
             const CanalIcon = CANAL_ICONS[conversa.canal]
@@ -496,63 +634,66 @@ export function PaginaConversas() {
               background: 'linear-gradient(to bottom, transparent, rgba(62,91,255,0.02))',
               scrollbarWidth: 'thin'
             }}>
-              {/* Agrupamento por Data (Simulado) */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <span style={{ 
-                  fontSize: '11px', color: 'var(--ws-text-3)', background: 'rgba(255,255,255,0.05)', 
-                  padding: '4px 12px', borderRadius: '99px', border: '1px solid var(--ws-glass-border)'
-                }}>
-                  Hoje
-                </span>
-              </div>
-
-              {conversaSelecionada.mensagens.map(msg => {
-                const isEntrada = msg.direcao === 'entrada'
-                const isIA = msg.remetenteTipo === 'ia'
-
-                return (
-                  <div key={msg.id} style={{ 
-                    alignSelf: isEntrada ? 'flex-start' : 'flex-end', 
-                    maxWidth: '70%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
-                  }}>
-                    {/* Nome do Remetente */}
-                    <div style={{ 
-                      fontSize: '9px', color: 'var(--ws-text-3)', 
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      justifyContent: isEntrada ? 'flex-start' : 'flex-end'
+              {gruposMensagens.map((grupo) => (
+                <React.Fragment key={grupo.data}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span style={{ 
+                      fontSize: '11px', color: 'var(--ws-text-3)', background: 'rgba(255,255,255,0.05)', 
+                      padding: '4px 12px', borderRadius: '99px', border: '1px solid var(--ws-glass-border)'
                     }}>
-                      {isIA && <Sparkles size={8} />}
-                      {isEntrada ? msg.remetenteNome : (isIA ? 'IA Agente' : 'Atendente')}
-                    </div>
-
-                    {/* Balão */}
-                    <div style={{
-                      padding: '10px 14px',
-                      borderRadius: isEntrada ? '0 12px 12px 12px' : '12px 0 12px 12px',
-                      fontSize: '13px',
-                      lineHeight: '1.5',
-                      background: isEntrada 
-                        ? 'rgba(255,255,255,0.85)' 
-                        : (isIA ? 'linear-gradient(135deg, #0f2744, #1a3a6b)' : 'linear-gradient(135deg, #3E5BFF, #7A5AF8)'),
-                      color: isEntrada ? 'var(--ws-text-1)' : 'white',
-                      border: isEntrada ? '1px solid var(--ws-glass-border)' : 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      position: 'relative'
-                    }}>
-                      {msg.conteudo}
-                      <div style={{ 
-                        fontSize: '9px', color: isEntrada ? 'var(--ws-text-3)' : 'rgba(255,255,255,0.6)', 
-                        textAlign: 'right', marginTop: '4px'
-                      }}>
-                        {msg.hora}
-                      </div>
-                    </div>
+                      {grupo.data}
+                    </span>
                   </div>
-                )
-              })}
+
+                  {grupo.mensagens.map(msg => {
+                    const isEntrada = msg.direcao === 'entrada'
+                    const isIA = msg.remetenteTipo === 'ia'
+
+                    return (
+                      <div key={msg.id} style={{ 
+                        alignSelf: isEntrada ? 'flex-start' : 'flex-end', 
+                        maxWidth: '70%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        {/* Nome do Remetente */}
+                        <div style={{ 
+                          fontSize: '9px', color: 'var(--ws-text-3)', 
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          justifyContent: isEntrada ? 'flex-start' : 'flex-end'
+                        }}>
+                          {isIA && <Sparkles size={8} />}
+                          {isEntrada ? msg.remetenteNome : (isIA ? 'IA Agente' : 'Atendente')}
+                        </div>
+
+                        {/* Balão */}
+                        <div style={{
+                          padding: '10px 14px',
+                          borderRadius: isEntrada ? '0 12px 12px 12px' : '12px 0 12px 12px',
+                          fontSize: '13px',
+                          lineHeight: '1.5',
+                          background: isEntrada 
+                            ? 'rgba(255,255,255,0.85)' 
+                            : (isIA ? 'linear-gradient(135deg, #0f2744, #1a3a6b)' : 'linear-gradient(135deg, #3E5BFF, #7A5AF8)'),
+                          color: isEntrada ? 'var(--ws-text-1)' : 'white',
+                          border: isEntrada ? '1px solid var(--ws-glass-border)' : 'none',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                          position: 'relative'
+                        }}>
+                          {msg.conteudo}
+                          <div style={{ 
+                            fontSize: '9px', color: isEntrada ? 'var(--ws-text-3)' : 'rgba(255,255,255,0.6)', 
+                            textAlign: 'right', marginTop: '4px'
+                          }}>
+                            {msg.hora}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </React.Fragment>
+              ))}
               <div ref={mensagensEndRef} />
             </div>
 
@@ -640,12 +781,16 @@ export function PaginaConversas() {
 
                 <button 
                   onClick={enviarMensagem}
+                  disabled={isEnviando || !textoMensagem.trim()}
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--ws-blue) 0%, var(--ws-purple) 100%)',
-                    border: 'none', color: 'white', cursor: 'pointer',
+                    background: isEnviando || !textoMensagem.trim()
+                      ? 'rgba(62,91,255,0.45)'
+                      : 'linear-gradient(135deg, var(--ws-blue) 0%, var(--ws-purple) 100%)',
+                    border: 'none', color: 'white', cursor: isEnviando ? 'wait' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(62, 91, 255, 0.2)'
+                    boxShadow: '0 4px 12px rgba(62, 91, 255, 0.2)',
+                    opacity: isEnviando ? 0.8 : 1
                   }}
                 >
                   <Send size={18} />
