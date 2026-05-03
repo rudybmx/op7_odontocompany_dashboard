@@ -22,10 +22,15 @@ export function getSql() {
 }
 
 // Exporta proxy pra usar como sql`...`
-export const sql = new Proxy({} as ReturnType<typeof postgres>, {
+// Precisa de apply trap porque postgres() retorna uma funcao (template tag)
+export const sql = new Proxy(function() {} as unknown as ReturnType<typeof postgres>, {
   get(_, prop) {
     const client = getSql()
     return (client as any)[prop]
+  },
+  apply(_target, _this, args) {
+    const client = getSql()
+    return (client as any)(...args)
   },
 })
 
