@@ -8,11 +8,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  env: {
-    AUTH_URL: process.env.AUTH_URL || 'https://auth.qozt.com.br',
-    DATABASE_URL: process.env.DATABASE_URL || '',
-    JWT_SECRET: process.env.JWT_SECRET || '',
-  },
+  // Todas as env vars sao injetadas em runtime via Docker/pod — NAO bake em build
+  serverExternalPackages: ['postgres'],
 }
 
 export default nextConfig;
