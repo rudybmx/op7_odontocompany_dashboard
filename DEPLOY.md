@@ -1,4 +1,4 @@
-# DEPLOY - Odontocompany by Op7 (Self-Host Completo)
+# DEPLOY - Op7 Nexo (Self-Host Completo)
 
 ## O que foi construido
 

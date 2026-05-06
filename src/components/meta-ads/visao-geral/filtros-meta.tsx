@@ -13,9 +13,11 @@ import type { DateRange } from 'react-day-picker'
 const AGRUPAMENTOS = ['Todos os agrupamentos', 'Franquias Sul', 'Franquias Sudeste', 'Rede Odontocompany']
 
 const CONTAS_MOCK = [
-  { id: 'oc-sp-centro', nome: 'Odontocompany - São Paulo Centro' },
-  { id: 'oc-santo-andre', nome: 'Odontocompany - Santo André' },
-  { id: 'oc-sbc', nome: 'Odontocompany - São Bernardo' },
+  { id: 'oc-rj-barra', nome: 'ODC RJ BARRA DA TIJUCA' },
+  { id: 'oc-ribeirao', nome: 'ODC RIBEIRÃO PRETO' },
+  { id: 'oc-ararangua', nome: 'ODC ARARANGUÁ' },
+  { id: 'oc-jaguare', nome: 'ODC JAGUARÉ' },
+  { id: 'oc-rio-negrinho', nome: 'ODC RIO NEGRINHO - SC' },
 ]
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -241,7 +243,7 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
                 <CommandGroup>
                   <CommandItem onSelect={selecionarTodas} className={`text-[12px] rounded-[6px] px-[10px] py-[6px] cursor-pointer transition-colors ${filtros.contaIds.length === 0 ? 'bg-[rgba(62,91,255,0.06)] text-[#3E5BFF] font-medium' : 'text-[#0E142A] dark:text-[rgba(255,255,255,0.80)] hover:bg-[rgba(62,91,255,0.06)] dark:hover:bg-[rgba(62,91,255,0.15)] hover:text-[#3E5BFF]'}`}>
                     <Check className={`mr-2 h-4 w-4 ${filtros.contaIds.length === 0 ? 'opacity-100' : 'opacity-0'}`} />
-                    <span>Todas as contas (257)</span>
+                    <span>Todas as contas (5)</span>
                   </CommandItem>
                   {CONTAS_MOCK.map((conta) => {
                     const isSelected = filtros.contaIds.includes(conta.id)

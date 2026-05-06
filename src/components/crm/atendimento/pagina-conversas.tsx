@@ -423,7 +423,7 @@ function apiConversaParaConversa(api: ApiConversa): Conversa {
     ultimaMensagemEm: api.ultimaMensagemAt ? formatarHora(api.ultimaMensagemAt) : '',
     ultimaMensagemAt: ultimaAt && !Number.isNaN(ultimaAt) ? ultimaAt : undefined,
     tags: api.tags?.length ? api.tags : ['WhatsApp', 'Evolution'],
-    agente: api.agente || 'Odontocompany by Op7',
+    agente: api.agente || 'Op7 Nexo',
     campanha: api.campanha || undefined,
     mensagens: (api.mensagens || []).map((msg) => mensagemApiParaMensagem(msg, api.contato.nome)),
   }

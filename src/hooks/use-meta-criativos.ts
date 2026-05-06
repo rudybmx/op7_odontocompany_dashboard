@@ -62,7 +62,21 @@ export function useMetaCriativos(filtros: FiltrosCriativos, dataInicio: string, 
   )
 
   const useMock = !isLoading && (!rows || rows.length === 0)
-  const finalRows = useMock ? (MOCK_CRIATIVOS_ROWS as any as CriativosCompletoRow[]) : (rows ?? [])
+  
+  let finalRows = rows ?? []
+  if (useMock) {
+    const { MOCK_CONTAS_META } = require('@/lib/mock-meta-ads')
+    const contasSelecionadas = filtros.contaIds && filtros.contaIds.length > 0 ? filtros.contaIds.length : MOCK_CONTAS_META.length
+    const ratio = contasSelecionadas / MOCK_CONTAS_META.length
+
+    finalRows = MOCK_CRIATIVOS_ROWS.map(r => ({
+      ...r,
+      investimento: Number(r.investimento) * ratio,
+      leads: Math.round(Number(r.leads) * ratio),
+      impressoes: Math.round(Number(r.impressoes) * ratio),
+      alcance: Math.round(Number(r.alcance) * ratio),
+    })) as any as CriativosCompletoRow[]
+  }
 
   let resultado = finalRows.map(mapCriativo)
 

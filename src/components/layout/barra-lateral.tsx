@@ -711,14 +711,14 @@ export function BarraLateral() {
       >
         {isCollapsed ? (
           <img
-            src="https://pub-db8ed4fb33634589a6ce5fb07e85cb46.r2.dev/logo/op7_dash_odc/logo-odontocompany_1618402286.png"
-            alt="Odontocompany by Op7"
+            src="https://pub-db8ed4fb33634589a6ce5fb07e85cb46.r2.dev/logo/op7/logo.svg"
+            alt="Op7 Nexo"
             style={{ height: 28, width: 'auto', objectFit: 'contain' }}
           />
         ) : (
           <img
-            src="https://pub-db8ed4fb33634589a6ce5fb07e85cb46.r2.dev/logo/op7_dash_odc/logo-odontocompany_1618402286.png"
-            alt="Odontocompany by Op7"
+            src="https://pub-db8ed4fb33634589a6ce5fb07e85cb46.r2.dev/logo/op7/logo.svg"
+            alt="Op7 Nexo"
             style={{ height: 50, width: 'auto', objectFit: 'contain' }}
           />
         )}

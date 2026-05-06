@@ -246,7 +246,7 @@ export async function GET(request: NextRequest) {
       naoLidas: row.nao_lidas,
       ultimaMensagem: row.ultima_mensagem || '',
       ultimaMensagemAt: iso(row.ultima_msg_at),
-      agente: row.agente || 'Odontocompany by Op7',
+      agente: row.agente || 'Op7 Nexo',
       campanha: row.campanha,
       canal: 'whatsapp',
       tags: row.tags?.length ? row.tags : ['WhatsApp', 'Evolution'],

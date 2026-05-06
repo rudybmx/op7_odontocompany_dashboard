@@ -308,7 +308,22 @@ export function useMetaCampanhas(filtros: FiltrosCampanhas, dataInicio: string, 
   )
 
   const useMock = !isLoading && (!rows || rows.length === 0)
-  const finalRows = useMock ? (MOCK_AD_ROWS as any as AdRow[]) : (rows ?? [])
+  
+  let finalRows = rows ?? []
+  if (useMock) {
+    const { MOCK_CONTAS_META } = require('@/lib/mock-meta-ads')
+    const contasSelecionadas = filtros.contaIds && filtros.contaIds.length > 0 ? filtros.contaIds.length : MOCK_CONTAS_META.length
+    const ratio = contasSelecionadas / MOCK_CONTAS_META.length
+
+    finalRows = MOCK_AD_ROWS.map(r => ({
+      ...r,
+      investimento: Number(r.investimento) * ratio,
+      leads: Math.round(Number(r.leads) * ratio),
+      cliques: Math.round(Number(r.cliques) * ratio),
+      impressoes: Math.round(Number(r.impressoes) * ratio),
+      alcance: Math.round(Number(r.alcance) * ratio),
+    })) as any as AdRow[]
+  }
 
   let campanhas = buildHierarchy(finalRows)
 

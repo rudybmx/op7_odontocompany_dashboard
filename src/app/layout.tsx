@@ -10,8 +10,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Odontocompany by Op7",
-  description: "Dashboard de gestão Odontocompany by Op7",
+  title: "Op7 Nexo",
+  description: "Dashboard de gestão Op7 Nexo",
 }
 
 export default function RootLayout({

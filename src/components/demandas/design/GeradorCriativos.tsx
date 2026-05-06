@@ -42,7 +42,7 @@ export function GeradorCriativos() {
     // Simular geração
     setTimeout(() => {
       setIsGenerating(false)
-      setResultImage('https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=800&auto=format&fit=crop')
+      setResultImage('https://pub-db8ed4fb33634589a6ce5fb07e85cb46.r2.dev/logo/op7_dash_odc/exemplodesigodc.jpeg')
     }, 2000)
   }
 
@@ -250,7 +250,7 @@ export function GeradorCriativos() {
                   <img src={resultImage} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-bold text-[var(--ws-text-1)] truncate">Implante Odontocompany</div>
+                  <div className="text-[10px] font-bold text-[var(--ws-text-1)] truncate">Implante Op7 Nexo</div>
                   <div className="text-[9px] text-[var(--ws-text-3)]">Há 2 minutos</div>
                 </div>
               </div>

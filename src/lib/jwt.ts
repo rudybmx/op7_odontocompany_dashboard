@@ -4,7 +4,7 @@ const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-change-me'
 )
 
-export interface OdontoCompanyPayload extends JWTPayload {
+export interface Op7NexoPayload extends JWTPayload {
   sub?: string
   email?: string
   role?: string
@@ -12,14 +12,14 @@ export interface OdontoCompanyPayload extends JWTPayload {
   org_id?: string
 }
 
-export async function verifyToken(token: string): Promise<OdontoCompanyPayload> {
+export async function verifyToken(token: string): Promise<Op7NexoPayload> {
   const { payload } = await jwtVerify(token, SECRET, {
     clockTolerance: 60,
   })
-  return payload as OdontoCompanyPayload
+  return payload as Op7NexoPayload
 }
 
-export async function createToken(payload: OdontoCompanyPayload, exp = '1h'): Promise<string> {
+export async function createToken(payload: Op7NexoPayload, exp = '1h'): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Bypass: Set mock user on failure
           setUser({
             id: 'mock-id',
-            email: 'admin@odontocompany-op7.com.br',
+            email: 'admin@op7-nexo-op7.com.br',
             level: 0,
             org_id: 'mock-org'
           })
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Bypass: Set mock user instead of redirect
         setUser({
           id: 'mock-id',
-          email: 'admin@odontocompany-op7.com.br',
+          email: 'admin@op7-nexo-op7.com.br',
           level: 0,
           org_id: 'mock-org'
         })

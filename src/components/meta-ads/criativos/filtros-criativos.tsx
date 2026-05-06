@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import type { FiltrosCriativos } from '@/types/meta-ads-criativos'
 
-const LS_KEY = 'odontocompany-criativos-cols'
+const LS_KEY = 'op7-nexo-criativos-cols'
 
 interface Props {
   filtros: FiltrosCriativos

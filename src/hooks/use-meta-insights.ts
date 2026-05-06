@@ -177,17 +177,40 @@ export function useMetaInsights(filtros: FiltrosMeta) {
   const isLoading = rInsights.isLoading || rAds.isLoading || rAccounts.isLoading
   const error     = rInsights.error ?? rAds.error ?? rAccounts.error ?? null
 
-  // Fallback para Mock Data (Odontocompany) se não houver dados ou houver erro
+  // Fallback para Mock Data (Op7 Nexo) se não houver dados ou houver erro
   // Em ambiente de desenvolvimento/demo, podemos preferir os dados mockados para exibição completa
   const useMock = !isLoading && (!rInsights.data || rInsights.data.length === 0)
 
   if (useMock) {
+    const contasFiltradas = filtros.contaIds.length > 0
+      ? MOCK_CONTAS_META.filter(c => filtros.contaIds.includes(c.id))
+      : MOCK_CONTAS_META
+
+    const ratio = contasFiltradas.length / MOCK_CONTAS_META.length
+
+    const dadosDiarios = MOCK_DADOS_DIARIOS.map(d => ({
+      ...d,
+      investimento: d.investimento * ratio,
+      leads: Math.round(d.leads * ratio)
+    }))
+
+    const topCriativos = MOCK_TOP_CRIATIVOS.slice(0, Math.max(2, Math.ceil(MOCK_TOP_CRIATIVOS.length * ratio))).map(c => ({
+      ...c,
+      leads: Math.round(c.leads * ratio)
+    }))
+
+    const insightsIA = MOCK_INSIGHTS_IA.filter(i => 
+      filtros.contaIds.length === 0 || 
+      filtros.contaIds.includes(i.anuncioId) || 
+      i.anuncioId.startsWith('ad-')
+    ).slice(0, Math.max(1, Math.ceil(MOCK_INSIGHTS_IA.length * ratio)))
+
     return {
       data: {
-        contas: MOCK_CONTAS_META,
-        dadosDiarios: MOCK_DADOS_DIARIOS,
-        topCriativos: MOCK_TOP_CRIATIVOS,
-        insightsIA: MOCK_INSIGHTS_IA,
+        contas: contasFiltradas,
+        dadosDiarios,
+        topCriativos,
+        insightsIA,
         periodo: { inicio: filtros.dataInicio, fim: filtros.dataFim },
       },
       isLoading: false,

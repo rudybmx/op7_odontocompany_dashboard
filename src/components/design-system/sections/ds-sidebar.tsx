@@ -543,7 +543,7 @@ export function DSSidebar() {
           overflowX: 'auto'
         }}>
 {`---
-COMPONENTE: Sidebar Odontocompany by Op7
+COMPONENTE: Sidebar Op7 Nexo
 ARQUIVO PRODUÇÃO: src/components/layout/barra-lateral.tsx
 
 ESTADO RECOLHIDO (COLLAPSED):

@@ -2,8 +2,8 @@ import type { ContaAnuncio, DadosDiarios, CriativoTop, MetaInsightsVisaoGeral, I
 
 export const MOCK_CONTAS_META: ContaAnuncio[] = [
   {
-    id: 'oc-sp-centro',
-    nome: 'Odontocompany - São Paulo Centro',
+    id: 'oc-rj-barra',
+    nome: 'ODC RJ BARRA DA TIJUCA',
     status: 'ACTIVE',
     investimento: 12450.80,
     leads: 342,
@@ -30,8 +30,8 @@ export const MOCK_CONTAS_META: ContaAnuncio[] = [
     ]
   },
   {
-    id: 'oc-santo-andre',
-    nome: 'Odontocompany - Santo André',
+    id: 'oc-ribeirao',
+    nome: 'ODC RIBEIRÃO PRETO',
     status: 'ACTIVE',
     investimento: 8900.50,
     leads: 215,
@@ -58,8 +58,8 @@ export const MOCK_CONTAS_META: ContaAnuncio[] = [
     ]
   },
   {
-    id: 'oc-sbc',
-    nome: 'Odontocompany - São Bernardo',
+    id: 'oc-ararangua',
+    nome: 'ODC ARARANGUÁ',
     status: 'ACTIVE',
     investimento: 15600.00,
     leads: 485,
@@ -84,6 +84,62 @@ export const MOCK_CONTAS_META: ContaAnuncio[] = [
       { platform: 'instagram_stories', label: 'IG Stories', count: 95, color: '#833ab4' },
       { platform: 'whatsapp', label: 'WhatsApp', count: 75, color: '#25d366' },
     ]
+  },
+  {
+    id: 'oc-jaguare',
+    nome: 'ODC JAGUARÉ',
+    status: 'ACTIVE',
+    investimento: 6200.00,
+    leads: 180,
+    leadsMensagem: 110,
+    leadsCadastro: 70,
+    leadsCompra: 0,
+    cpl: 34.44,
+    ctr: 2.10,
+    cpc: 0.88,
+    cpm: 19.50,
+    alcance: 85000,
+    impressoes: 190000,
+    frequencia: 2.23,
+    saldo: 2100.00,
+    saldoInicial: 10000.00,
+    isPrepay: false,
+    limiteCartao: 15000.00,
+    fundingSourceType: 'VISA_9012',
+    leadsPorPlataforma: [
+      { platform: 'facebook_feed', label: 'FB Feed', count: 50, color: '#1877f2' },
+      { platform: 'instagram_feed', label: 'IG Feed', count: 80, color: '#e1306c' },
+      { platform: 'instagram_stories', label: 'IG Stories', count: 30, color: '#833ab4' },
+      { platform: 'whatsapp', label: 'WhatsApp', count: 20, color: '#25d366' },
+    ]
+  },
+  {
+    id: 'oc-rio-negrinho',
+    nome: 'ODC RIO NEGRINHO - SC',
+    status: 'ACTIVE',
+    investimento: 4800.00,
+    leads: 145,
+    leadsMensagem: 90,
+    leadsCadastro: 55,
+    leadsCompra: 0,
+    cpl: 33.10,
+    ctr: 1.95,
+    cpc: 0.95,
+    cpm: 17.80,
+    alcance: 65000,
+    impressoes: 140000,
+    frequencia: 2.15,
+    saldo: 800.00,
+    saldoInicial: 5000.00,
+    isPrepay: true,
+    ultimoValorRecarga: 2000.00,
+    fundingSourceType: 'PIX',
+    leadsPorPlataforma: [
+      { platform: 'facebook_feed', label: 'FB Feed', count: 35, color: '#1877f2' },
+      { platform: 'instagram_feed', label: 'IG Feed', count: 70, color: '#e1306c' },
+      { platform: 'instagram_stories', label: 'IG Stories', count: 25, color: '#833ab4' },
+      { platform: 'whatsapp', label: 'WhatsApp', count: 15, color: '#25d366' },
+    ]
   }
 ]
 
@@ -104,7 +160,7 @@ export const MOCK_TOP_CRIATIVOS: CriativoTop[] = [
     id: 'ad-1',
     nome: '[IMPLANTE] Sorriso Renovado - Promoção Maio',
     tipo: 'IMAGE',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?q=80&w=300&h=300&auto=format&fit=crop',
+    thumbnailUrl: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/4d3b6b195440761.660d918114690.png',
     leads: 124,
     ctr: 3.42,
     cpl: 28.50
@@ -113,7 +169,7 @@ export const MOCK_TOP_CRIATIVOS: CriativoTop[] = [
     id: 'ad-2',
     nome: '[ORTODONTIA] Aparelho Invisível - Estética e Conforto',
     tipo: 'VIDEO',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1598256989800-fe5f95da9787?q=80&w=300&h=300&auto=format&fit=crop',
+    thumbnailUrl: 'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/dab1f7178858467.64ef585bd9ce0.jpg',
     leads: 98,
     ctr: 2.85,
     cpl: 32.10
@@ -122,7 +178,7 @@ export const MOCK_TOP_CRIATIVOS: CriativoTop[] = [
     id: 'ad-3',
     nome: '[ESTETICA] Clareamento Dental - Brilhe mais',
     tipo: 'IMAGE',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=300&h=300&auto=format&fit=crop',
+    thumbnailUrl: 'https://mir-s3-cdn-cf.behance.net/project_modules/disp/acf0ce178858467.64ef585abd025.jpg',
     leads: 65,
     ctr: 2.10,
     cpl: 45.30
@@ -131,7 +187,7 @@ export const MOCK_TOP_CRIATIVOS: CriativoTop[] = [
     id: 'ad-4',
     nome: '[LIMPEZA] Saúde Bucal em Primeiro Lugar',
     tipo: 'IMAGE',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1445527815219-ecbfec67492e?q=80&w=300&h=300&auto=format&fit=crop',
+    thumbnailUrl: 'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/ea91b5178858467.64ef585c782bc.jpg',
     leads: 42,
     ctr: 1.75,
     cpl: 22.40
@@ -140,7 +196,7 @@ export const MOCK_TOP_CRIATIVOS: CriativoTop[] = [
     id: 'ad-5',
     nome: '[INSTITUCIONAL] Odontocompany - Sua clínica de confiança',
     tipo: 'VIDEO',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=300&h=300&auto=format&fit=crop',
+    thumbnailUrl: 'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/a46164201890701.667c614598de7.png',
     leads: 38,
     ctr: 1.45,
     cpl: 55.20
@@ -159,10 +215,10 @@ export const MOCK_INSIGHTS_IA: InsightIA[] = [
   },
   {
     id: 'in-2',
-    anuncioId: 'oc-santo-andre',
+    anuncioId: 'oc-ribeirao',
     severidade: 'alerta',
-    titulo: 'Saldo Crítico em Santo André',
-    mensagem: 'A conta de Santo André está com apenas R$ 120,40 de saldo. As campanhas podem ser pausadas nas próximas 24h.',
+    titulo: 'Saldo Crítico em Ribeirão Preto',
+    mensagem: 'A conta de Ribeirão Preto está com apenas R$ 120,40 de saldo. As campanhas podem ser pausadas nas próximas 24h.',
     analiseCompleta: 'O consumo médio diário é de R$ 300,00, o que esgotará o saldo rapidamente.',
     labelAcao: 'Efetuar Recarga'
   },
@@ -218,11 +274,11 @@ export const MOCK_DEMOGRAPHICS_ROWS = [
 ]
 
 export const MOCK_GEO_ROWS = [
-  { region: 'São Paulo', leads: 245, investimento: 8500, cpl: 34.69 },
-  { region: 'Santo André', leads: 112, investimento: 4200, cpl: 37.50 },
-  { region: 'São Bernardo', leads: 98, investimento: 3800, cpl: 38.77 },
-  { region: 'Osasco', leads: 54, investimento: 1800, cpl: 33.33 },
-  { region: 'Guarulhos', leads: 42, investimento: 1500, cpl: 35.71 },
+  { region: 'RJ - Barra da Tijuca', leads: 245, investimento: 8500, cpl: 34.69 },
+  { region: 'Ribeirão Preto', leads: 112, investimento: 4200, cpl: 37.50 },
+  { region: 'Araranguá', leads: 98, investimento: 3800, cpl: 38.77 },
+  { region: 'Jaguaré', leads: 54, investimento: 1800, cpl: 33.33 },
+  { region: 'Rio Negrinho - SC', leads: 42, investimento: 1500, cpl: 35.71 },
 ]
 
 export const MOCK_ACCOUNT_SUMMARY_ROWS = [
