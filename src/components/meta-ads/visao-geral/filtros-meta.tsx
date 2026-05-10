@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import api from '@/lib/api-client'
 import { Grid3X3, Briefcase, ChevronDown, CalendarDays, Check, LayoutDashboard } from 'lucide-react'
 import { format, addMonths, subMonths, subDays, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, isWithinInterval, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -10,16 +11,6 @@ import { Calendar } from '@/components/ui/calendar'
 import type { FiltrosMeta, TipoComparativo } from '@/types/meta-ads'
 import type { DateRange } from 'react-day-picker'
 
-const AGRUPAMENTOS = ['Todos os agrupamentos', 'Franquias Sul', 'Franquias Sudeste', 'Rede Odontocompany']
-
-const CONTAS_MOCK = [
-  { id: 'oc-rj-barra', nome: 'ODC RJ BARRA DA TIJUCA' },
-  { id: 'oc-ribeirao', nome: 'ODC RIBEIRÃO PRETO' },
-  { id: 'oc-ararangua', nome: 'ODC ARARANGUÁ' },
-  { id: 'oc-jaguare', nome: 'ODC JAGUARÉ' },
-  { id: 'oc-rio-negrinho', nome: 'ODC RIO NEGRINHO - SC' },
-]
-
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 const OPCOES_COMPARATIVO: { valor: TipoComparativo; label: string }[] = [
@@ -28,6 +19,17 @@ const OPCOES_COMPARATIVO: { valor: TipoComparativo; label: string }[] = [
   { valor: 'ano_anterior', label: 'Ano ant.' },
   { valor: 'nenhum', label: 'Nenhum' },
 ]
+
+interface ContaReal {
+  id: string
+  account_id: string
+  account_name: string | null
+  agrupamento: string | null
+}
+
+interface WorkspaceBasico {
+  id: string
+}
 
 interface FiltrosMetaProps {
   filtros: FiltrosMeta
@@ -43,6 +45,26 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
   const [atalhoAtivo, setAtalhoAtivo] = useState<string | null>('este-mes')
   const [dataInicioInput, setDataInicioInput] = useState(filtros.dataInicio)
   const [dataFimInput, setDataFimInput] = useState(filtros.dataFim)
+  const [contasReais, setContasReais] = useState<ContaReal[]>([])
+
+  useEffect(() => {
+    async function loadContas() {
+      try {
+        const workspaces = await api.get<WorkspaceBasico[]>('/workspaces')
+        const wsId = workspaces?.[0]?.id
+        if (!wsId) return
+        const contas = await api.get<ContaReal[]>(`/workspaces/${wsId}/ads-accounts`)
+        setContasReais(contas.filter(c => (c as any).plataforma === 'meta' || !('plataforma' in c)))
+      } catch {
+        // silencioso — continua com lista vazia
+      }
+    }
+    loadContas()
+  }, [])
+
+  const agrupamentosUnicos = Array.from(
+    new Set(contasReais.map(c => c.agrupamento).filter(Boolean) as string[])
+  )
 
   const handleDataAbertaChange = (open: boolean) => {
     setDataAberta(open)
@@ -53,8 +75,8 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
   }
 
   const contasSelecionadas = filtros.contaIds.length === 0
-    ? CONTAS_MOCK
-    : CONTAS_MOCK.filter((c) => filtros.contaIds.includes(c.id))
+    ? contasReais
+    : contasReais.filter(c => filtros.contaIds.includes(c.account_id))
 
   const formatarIntervalo = () => {
     const inicio = format(parseISO(filtros.dataInicio + 'T12:00:00'), "dd 'de' MMM", { locale: ptBR })
@@ -167,7 +189,7 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
               <CommandList>
                 <CommandEmpty className="py-2 text-[11px] text-center">Nenhum encontrado</CommandEmpty>
                 <CommandGroup>
-                  {AGRUPAMENTOS.map((ag) => {
+                  {['Todos os agrupamentos', ...agrupamentosUnicos].map((ag) => {
                     const isSelected = filtros.agrupamento === ag || (!filtros.agrupamento && ag === 'Todos os agrupamentos')
                     return (
                       <CommandItem
@@ -229,7 +251,7 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
                 {filtros.contaIds.length === 0
                   ? 'Todas as contas'
                   : contasSelecionadas.length === 1
-                    ? contasSelecionadas[0].nome
+                    ? (contasSelecionadas[0].account_name || contasSelecionadas[0].account_id)
                     : `${contasSelecionadas.length} contas`}
               </span>
               <ChevronDown size={12} style={{ color: 'var(--ws-text-3)', marginLeft: 'auto' }} />
@@ -243,16 +265,16 @@ export function FiltrosMeta({ filtros, onChange }: FiltrosMetaProps) {
                 <CommandGroup>
                   <CommandItem onSelect={selecionarTodas} className={`text-[12px] rounded-[6px] px-[10px] py-[6px] cursor-pointer transition-colors ${filtros.contaIds.length === 0 ? 'bg-[rgba(62,91,255,0.06)] text-[#3E5BFF] font-medium' : 'text-[#0E142A] dark:text-[rgba(255,255,255,0.80)] hover:bg-[rgba(62,91,255,0.06)] dark:hover:bg-[rgba(62,91,255,0.15)] hover:text-[#3E5BFF]'}`}>
                     <Check className={`mr-2 h-4 w-4 ${filtros.contaIds.length === 0 ? 'opacity-100' : 'opacity-0'}`} />
-                    <span>Todas as contas (5)</span>
+                    <span>Todas as contas ({contasReais.length})</span>
                   </CommandItem>
-                  {CONTAS_MOCK.map((conta) => {
-                    const isSelected = filtros.contaIds.includes(conta.id)
+                  {contasReais.map((conta) => {
+                    const isSelected = filtros.contaIds.includes(conta.account_id)
                     return (
-                      <CommandItem key={conta.id} onSelect={() => toggleConta(conta.id)} className={`text-[12px] rounded-[6px] px-[10px] py-[6px] cursor-pointer transition-colors ${isSelected ? 'bg-[rgba(62,91,255,0.06)] text-[#3E5BFF] font-medium' : 'text-[#0E142A] dark:text-[rgba(255,255,255,0.80)] hover:bg-[rgba(62,91,255,0.06)] dark:hover:bg-[rgba(62,91,255,0.15)] hover:text-[#3E5BFF]'}`}>
+                      <CommandItem key={conta.account_id} onSelect={() => toggleConta(conta.account_id)} className={`text-[12px] rounded-[6px] px-[10px] py-[6px] cursor-pointer transition-colors ${isSelected ? 'bg-[rgba(62,91,255,0.06)] text-[#3E5BFF] font-medium' : 'text-[#0E142A] dark:text-[rgba(255,255,255,0.80)] hover:bg-[rgba(62,91,255,0.06)] dark:hover:bg-[rgba(62,91,255,0.15)] hover:text-[#3E5BFF]'}`}>
                         <Check className={`mr-2 h-4 w-4 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
                         <div className="flex flex-col">
-                          <span>{conta.nome}</span>
-                          <span className="text-[10px] opacity-60 font-mono tracking-tight">{conta.id}</span>
+                          <span>{conta.account_name || conta.account_id}</span>
+                          <span className="text-[10px] opacity-60 font-mono tracking-tight">{conta.account_id}</span>
                         </div>
                       </CommandItem>
                     )

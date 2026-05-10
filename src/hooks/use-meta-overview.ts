@@ -1,27 +1,9 @@
+'use client'
+
 import useSWR from 'swr'
-import { apiGet } from '@/lib/api'
+import api from '@/lib/api-client'
 
-interface SummaryResponse {
-  total_spend: number
-  total_leads: number
-  total_impressions: number
-  total_reach: number
-  total_clicks: number
-  avg_ctr: number
-  avg_cpc: number
-  avg_cpm: number
-  avg_cpl: number
-}
-
-interface FinanceiroResponse {
-  is_prepay_account: boolean
-  balance: number
-  amount_spent: number
-  spend_cap: number
-  funding_source_type: string
-  funding_source_details: string
-  bm_name: string
-}
+interface Workspace { id: string }
 
 interface MetaOverview {
   kpis: {
@@ -45,62 +27,48 @@ interface MetaOverview {
   error: any
 }
 
-/**
- * Hook to fetch overview data from Meta Ads account.
- * Fetches summary KPIs and financial details in parallel.
- */
+function mesAtual(): { inicio: string; fim: string } {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return { inicio: `${y}-${m}-01`, fim: `${y}-${m}-${d}` }
+}
+
 export function useMetaOverview(): MetaOverview {
-  // SWR calls in parallel
-  const { 
-    data: summaryData, 
-    error: errorSummary, 
-    isLoading: isLoadingSummary 
-  } = useSWR<SummaryResponse>('/meta/overview', apiGet)
+  const { data: workspaces } = useSWR<Workspace[]>(
+    '/workspaces',
+    () => api.get<Workspace[]>('/workspaces'),
+    { revalidateOnFocus: false }
+  )
+  const wsId = workspaces?.[0]?.id
+  const { inicio, fim } = mesAtual()
 
-  const { 
-    data: financeiroData, 
-    error: errorFinanceiro, 
-    isLoading: isLoadingFinanceiro 
-  } = useSWR<FinanceiroResponse[]>('/vw_meta_account_financeiro', apiGet)
+  const { data: raw, isLoading, error } = useSWR(
+    wsId ? `/meta/insights/visao-geral?workspace_id=${wsId}&data_inicio=${inicio}&data_fim=${fim}` : null,
+    () =>
+      api.get<any>(
+        `/meta/insights/visao-geral?workspace_id=${wsId}&data_inicio=${inicio}&data_fim=${fim}`
+      ),
+    { revalidateOnFocus: false }
+  )
 
-  // PostgREST typically returns an array for views
-  const summary = summaryData?.[0]
-  const financeiro = financeiroData?.[0]
-
-  const isLoading = isLoadingSummary || isLoadingFinanceiro
-  const error = errorSummary || errorFinanceiro
-
-  // Logic for Balance (Saldo)
-  // if (is_prepay_account) saldo = balance / 100
-  // else saldo = spend_cap - amount_spent
-  let saldo = 0
-  if (financeiro) {
-    if (financeiro.is_prepay_account) {
-      saldo = (financeiro.balance || 0) / 100
-    } else {
-      saldo = (financeiro.spend_cap || 0) - (financeiro.amount_spent || 0)
-    }
+  const kpis = raw?.kpis ?? {
+    spend: 0,
+    leads: 0,
+    impressions: 0,
+    reach: 0,
+    clicks: 0,
+    ctr: 0,
+    cpc: 0,
+    cpm: 0,
+    cpl: 0,
   }
 
   return {
-    kpis: {
-      spend: summary?.total_spend ?? 0,
-      leads: summary?.total_leads ?? 0,
-      impressions: summary?.total_impressions ?? 0,
-      reach: summary?.total_reach ?? 0,
-      clicks: summary?.total_clicks ?? 0,
-      ctr: summary?.avg_ctr ?? 0,
-      cpc: summary?.avg_cpc ?? 0,
-      cpm: summary?.avg_cpm ?? 0,
-      cpl: summary?.avg_cpl ?? 0,
-    },
-    financeiro: {
-      saldo,
-      limite: financeiro?.spend_cap ?? 0,
-      formaPagamento: financeiro?.funding_source_details || financeiro?.funding_source_type || '-',
-      nomeBm: financeiro?.bm_name ?? '-',
-    },
-    isLoading,
+    kpis,
+    financeiro: { saldo: 0, limite: 0, formaPagamento: '-', nomeBm: '-' },
+    isLoading: !wsId || isLoading,
     error,
   }
 }

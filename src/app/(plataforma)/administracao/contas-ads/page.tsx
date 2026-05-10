@@ -25,6 +25,7 @@ interface AdsAccount {
   status: 'ativo' | 'expirado' | 'erro'
   sincronizado_em?: string | null
   periodo_sync_inicio?: string | null
+  agrupamento?: string | null
 }
 
 interface MetaContaAPI {
@@ -116,6 +117,7 @@ function emptyForm() {
     nome: '',
     bm_id: '',
     token: '',
+    agrupamento: '',
   }
 }
 
@@ -142,6 +144,11 @@ export default function ContasAdsPage() {
   const [metaErro, setMetaErro] = useState('')
   const [buscandoMeta, setBuscandoMeta] = useState(false)
   const [metaFiltro, setMetaFiltro] = useState('')
+
+  // Estado edição de agrupamento
+  const [editandoConta, setEditandoConta] = useState<AdsAccount | null>(null)
+  const [agrupamentoEdit, setAgrupamentoEdit] = useState('')
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
 
   useEffect(() => {
     if (!authLoading && user && user.role !== 'platform_admin') router.push('/')
@@ -215,6 +222,7 @@ export default function ContasAdsPage() {
           : null,
         periodo_sync: metaPeriodo,
         contas: contasPayload,
+        agrupamento: form.agrupamento || null,
       })
       fecharDrawer()
       await loadContas()
@@ -239,6 +247,7 @@ export default function ContasAdsPage() {
         nome: form.nome.trim(),
         bm_id: form.bm_id.trim() || null,
         token: form.token.trim() || null,
+        agrupamento: form.agrupamento || null,
       })
       setContas(prev => [criada, ...prev])
       fecharDrawer()
@@ -261,6 +270,30 @@ export default function ContasAdsPage() {
     setMetaPeriodo('mes_atual')
     setMetaErro('')
     setMetaFiltro('')
+  }
+
+  async function salvarAgrupamento() {
+    if (!editandoConta) return
+    setSalvandoEdit(true)
+    try {
+      await api.put(`/ads-accounts/${editandoConta.id}`, {
+        plataforma: editandoConta.plataforma,
+        account_id: editandoConta.account_id,
+        account_name: editandoConta.nome,
+        agrupamento: agrupamentoEdit || null,
+        status: editandoConta.status,
+        config: {},
+      })
+      setContas(prev => prev.map(c =>
+        c.id === editandoConta.id ? { ...c, agrupamento: agrupamentoEdit || null } : c
+      ))
+      setEditandoConta(null)
+      toast.success('Agrupamento atualizado!')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar')
+    } finally {
+      setSalvandoEdit(false)
+    }
   }
 
   const filtradas = contas.filter(c => {
@@ -453,7 +486,7 @@ export default function ContasAdsPage() {
                           fontSize: 12, color: 'var(--ws-text-2)',
                           cursor: 'pointer',
                         }}
-                        onClick={() => toast.info('Edição em breve')}
+                        onClick={() => { setEditandoConta(c); setAgrupamentoEdit(c.agrupamento || '') }}
                       >
                         Editar
                       </button>
@@ -757,6 +790,17 @@ export default function ContasAdsPage() {
                         </select>
                       </div>
 
+                      <div>
+                        <label style={labelStyle}>Agrupamento <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                        <input
+                          type="text"
+                          placeholder="ex: Franquias SP, Zona Sul"
+                          value={form.agrupamento}
+                          onChange={e => setForm(prev => ({ ...prev, agrupamento: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      </div>
+
                       {form.workspace_id && (
                         <div style={{
                           padding: '12px 14px', borderRadius: 10,
@@ -825,6 +869,17 @@ export default function ContasAdsPage() {
                         fontFamily: 'monospace',
                         fontSize: 12,
                       }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Agrupamento <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+                    <input
+                      type="text"
+                      placeholder="ex: Franquias SP, Zona Sul"
+                      value={form.agrupamento}
+                      onChange={e => setForm(prev => ({ ...prev, agrupamento: e.target.value }))}
+                      style={inputStyle}
                     />
                   </div>
                 </>
@@ -937,6 +992,40 @@ export default function ContasAdsPage() {
                 {salvando ? 'Salvando...' : 'Salvar Conta'}
               </button>
             )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!editandoConta} onOpenChange={open => !open && setEditandoConta(null)}>
+        <SheetContent side="right" style={{ width: 400, background: 'var(--ws-glass-bg)', borderLeft: '1px solid var(--ws-glass-border)', backdropFilter: 'blur(24px)', padding: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid var(--ws-glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--ws-text-1)' }}>Editar Conta</h2>
+              <p style={{ fontSize: 12, color: 'var(--ws-text-2)', margin: '4px 0 0' }}>{editandoConta?.nome}</p>
+            </div>
+            <button onClick={() => setEditandoConta(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--ws-glass-border)', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--ws-text-2)' }}>
+              <X size={16} />
+            </button>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+            <div>
+              <label style={labelStyle}>Agrupamento <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span></label>
+              <input
+                type="text"
+                placeholder="ex: Franquias SP, Zona Sul"
+                value={agrupamentoEdit}
+                onChange={e => setAgrupamentoEdit(e.target.value)}
+                style={inputStyle}
+              />
+              <p style={{ fontSize: 11, color: 'var(--ws-text-3)', marginTop: 6 }}>Agrupa contas para filtros no dashboard</p>
+            </div>
+          </div>
+          <div style={{ padding: '20px 28px', borderTop: '1px solid var(--ws-glass-border)', display: 'flex', gap: 12 }}>
+            <button onClick={() => setEditandoConta(null)} style={{ flex: 1, height: 42, borderRadius: 10, background: 'transparent', border: '1px solid var(--ws-glass-border)', fontSize: 14, fontWeight: 500, color: 'var(--ws-text-2)', cursor: 'pointer' }}>Cancelar</button>
+            <button onClick={salvarAgrupamento} disabled={salvandoEdit} style={{ flex: 2, height: 42, borderRadius: 10, background: salvandoEdit ? 'rgba(62,91,255,0.5)' : 'linear-gradient(135deg, #3E5BFF, #7A5AF8)', border: 'none', fontSize: 14, fontWeight: 600, color: 'white', cursor: salvandoEdit ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              {salvandoEdit ? <Loader2 size={16} className="animate-spin" /> : null}
+              {salvandoEdit ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </SheetContent>
       </Sheet>
