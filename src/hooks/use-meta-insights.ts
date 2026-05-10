@@ -2,7 +2,8 @@
 
 import useSWR from 'swr'
 import api from '@/lib/api-client'
-import type { FiltrosMeta, MetaInsightsVisaoGeral, ContaAnuncio, DadosDiarios } from '@/types/meta-ads'
+import type { FiltrosMeta, MetaInsightsVisaoGeral, ContaAnuncio, DadosDiarios, CriativoTop } from '@/types/meta-ads'
+import { calcularScore } from '@/components/meta-ads/anuncios/score-anuncio'
 
 interface Workspace { id: string; nome: string }
 
@@ -96,7 +97,15 @@ export function useMetaInsights(filtros: FiltrosMeta) {
             leads: d.leads,
           })
         ),
-        topCriativos: [],
+        topCriativos: (raw.top_criativos ?? []).map((c: any): CriativoTop => ({
+          id: c.id,
+          nome: c.nome ?? '',
+          tipo: 'IMAGE',
+          thumbnailUrl: c.thumbnail_url ?? undefined,
+          leads: c.leads ?? 0,
+          ctr: c.ctr ?? 0,
+          cpl: c.cpl ?? 0,
+        })),
         insightsIA: iaData ?? [],
         periodo: raw.periodo ?? { inicio: filtros.dataInicio, fim: filtros.dataFim },
       }

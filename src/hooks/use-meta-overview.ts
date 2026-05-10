@@ -65,9 +65,14 @@ export function useMetaOverview(): MetaOverview {
     cpl: 0,
   }
 
+  const totalSaldo = (raw?.contas ?? []).reduce(
+    (acc: number, c: any) => acc + (c.saldo ?? 0),
+    0
+  )
+
   return {
     kpis,
-    financeiro: { saldo: 0, limite: 0, formaPagamento: '-', nomeBm: '-' },
+    financeiro: { saldo: totalSaldo, limite: 0, formaPagamento: '-', nomeBm: '-' },
     isLoading: !wsId || isLoading,
     error,
   }
