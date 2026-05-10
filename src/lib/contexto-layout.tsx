@@ -149,7 +149,7 @@ export const secoesNavegacao: SecaoNavegacao[] = [
         administrativo: true,
         abertoPadrao: false,
         itens: [
-          { nome: "Contas" },
+          { nome: "Clientes", rota: "/administracao/empresas/contas" },
           { nome: "Planos" },
           { nome: "Financeiro" },
           { nome: "Avisos Personalizados" },
