@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CreditCard,
   Loader2,
+  Pencil,
   Plus,
   Search,
   Users,
@@ -99,6 +100,7 @@ export default function ClientesPage() {
   const [salvando, setSalvando] = useState(false)
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false)
   const [clienteSalvo, setClienteSalvo] = useState<Workspace | null>(null)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm())
 
   useEffect(() => {
@@ -128,7 +130,7 @@ export default function ClientesPage() {
     try {
       const res = await fetch(`/api/cnpj/${digits}`)
       const data: ReceitaWS = await res.json()
-      if (data.status === 'ERROR') throw new Error('CNPJ inválido ou não encontrado')
+      if (data.status !== 'OK') throw new Error('CNPJ inválido ou não encontrado')
       setForm(prev => ({
         ...prev,
         razao_social: data.nome || prev.razao_social,
@@ -153,28 +155,57 @@ export default function ClientesPage() {
   async function salvar() {
     if (!form.nome.trim()) { toast.error('Nome é obrigatório'); return }
     setSalvando(true)
+    const payload = {
+      nome: form.nome.trim(),
+      razao_social: form.razao_social.trim() || null,
+      cnpj: form.cnpj || null,
+      endereco: form.endereco,
+      modulos: form.modulos,
+    }
     try {
-      const criado = await api.post<Workspace>('/workspaces', {
-        nome: form.nome.trim(),
-        razao_social: form.razao_social.trim() || null,
-        cnpj: form.cnpj || null,
-        endereco: form.endereco,
-        modulos: form.modulos,
-      })
-      setClienteSalvo(criado)
-      setClientes(prev => [criado, ...prev])
-      setForm(emptyForm())
-      toast.success('Cliente criado com sucesso!')
+      if (editandoId) {
+        const atualizado = await api.put<Workspace>(`/workspaces/${editandoId}`, payload)
+        setClientes(prev => prev.map(c => c.id === editandoId ? atualizado : c))
+        fecharDrawer()
+        toast.success('Cliente atualizado com sucesso!')
+      } else {
+        const criado = await api.post<Workspace>('/workspaces', payload)
+        setClienteSalvo(criado)
+        setClientes(prev => [criado, ...prev])
+        setForm(emptyForm())
+        toast.success('Cliente criado com sucesso!')
+      }
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao criar cliente')
+      toast.error(err.message || (editandoId ? 'Erro ao atualizar cliente' : 'Erro ao criar cliente'))
     } finally {
       setSalvando(false)
     }
   }
 
+  function abrirEditar(c: Workspace) {
+    setEditandoId(c.id)
+    setForm({
+      nome: c.nome,
+      razao_social: c.razao_social || '',
+      cnpj: c.cnpj || '',
+      endereco: {
+        logradouro: c.endereco?.logradouro || '',
+        numero: c.endereco?.numero || '',
+        complemento: c.endereco?.complemento || '',
+        bairro: c.endereco?.bairro || '',
+        municipio: c.endereco?.municipio || '',
+        uf: c.endereco?.uf || '',
+        cep: c.endereco?.cep || '',
+      },
+      modulos: c.modulos || [],
+    })
+    setDrawerAberto(true)
+  }
+
   function fecharDrawer() {
     setDrawerAberto(false)
     setClienteSalvo(null)
+    setEditandoId(null)
     setForm(emptyForm())
   }
 
@@ -345,7 +376,19 @@ export default function ClientesPage() {
                     </span>
                   </td>
                   <td style={{ padding: '14px 18px' }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => abrirEditar(c)}
+                        style={{
+                          padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 500,
+                          background: 'rgba(255,255,255,0.06)', color: 'var(--ws-text-2)',
+                          border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                      >
+                        <Pencil size={12} />
+                        Editar
+                      </button>
                       <button style={{
                         padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 500,
                         background: 'rgba(62,91,255,0.10)', color: 'var(--ws-blue)',
@@ -450,10 +493,10 @@ export default function ClientesPage() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ws-text-1)' }}>
-                    Novo Cliente
+                    {editandoId ? 'Editar Cliente' : 'Novo Cliente'}
                   </h2>
                   <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ws-text-2)' }}>
-                    Configure o workspace do cliente
+                    {editandoId ? 'Atualize os dados do workspace' : 'Configure o workspace do cliente'}
                   </p>
                 </div>
                 <button
@@ -634,7 +677,7 @@ export default function ClientesPage() {
                 }}
               >
                 {salvando && <Loader2 size={16} className="animate-spin" />}
-                {salvando ? 'Salvando...' : 'Salvar Cliente'}
+                {salvando ? 'Salvando...' : editandoId ? 'Salvar Alterações' : 'Salvar Cliente'}
               </button>
             </div>
           )}

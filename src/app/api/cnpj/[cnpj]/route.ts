@@ -12,6 +12,7 @@ export async function GET(
       next: { revalidate: 0 },
     })
     const data = await res.json()
+    console.log('ReceitaWS response:', JSON.stringify(data))
     return NextResponse.json(data, { status: res.status })
   } catch {
     return NextResponse.json({ message: 'Erro ao consultar CNPJ' }, { status: 502 })
