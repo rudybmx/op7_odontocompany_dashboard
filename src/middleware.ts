@@ -3,20 +3,27 @@ import type { NextRequest } from 'next/server'
 
 const COOKIE = 'ws-session'
 const LOGIN_PATH = '/login'
-
-function getUserLevelFromToken(cookieValue: string): number | null {
-  try {
-    const parts = cookieValue.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1]))
-    return payload.level ?? null
-  } catch {
-    return null
-  }
-}
+const DASHBOARD_PATH = '/marketing/campanhas/meta-ads'
+const PUBLIC_PATHS = ['/login', '/api/']
 
 export function middleware(request: NextRequest) {
-  // BYPASS AUTH FOR DEVELOPMENT
+  const { pathname } = request.nextUrl
+  const token = request.cookies.get(COOKIE)?.value
+
+  const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p))
+
+  // Autenticado acessando login → manda pro dashboard
+  if (isPublic && token && pathname.startsWith(LOGIN_PATH)) {
+    return NextResponse.redirect(new URL(DASHBOARD_PATH, request.url))
+  }
+
+  if (isPublic) return NextResponse.next()
+
+  // Não autenticado → login
+  if (!token) {
+    return NextResponse.redirect(new URL(LOGIN_PATH, request.url))
+  }
+
   return NextResponse.next()
 }
 

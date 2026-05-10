@@ -17,7 +17,7 @@ export default function LoginPage() {
     setError('')
     try {
       await signIn(email.trim(), password)
-      router.push('/')
+      router.push('/marketing/campanhas/meta-ads')
     } catch {
       setError('Email ou senha incorretos')
     } finally {

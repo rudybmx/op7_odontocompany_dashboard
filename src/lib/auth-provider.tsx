@@ -2,13 +2,13 @@
 
 import React, { createContext, useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getToken, hasRefreshToken, refreshToken, signIn as authSignIn, logout as authLogout, clearToken, getUser, clearSessionCookie } from '@/lib/auth'
+import { signIn as authSignIn, logout as authLogout, getMe, getToken } from '@/lib/auth'
 
 interface AuthUser {
   id: string
   email: string
-  level: number
-  org_id: string
+  nome: string
+  role: string
 }
 
 interface AuthContextValue {
@@ -23,7 +23,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [token, setToken] = useState<string | null>(getToken())
+  const [token, setTokenState] = useState<string | null>(getToken())
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -31,69 +31,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const t = getToken()
     if (!t) {
       setUser(null)
-      setToken(null)
+      setTokenState(null)
       return
     }
     try {
-      const userData = await getUser()
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        level: userData.nivel ?? userData.level ?? userData.organization_level ?? 99,
-        org_id: userData.org_id ?? userData.organization_id ?? '',
-      })
-      setToken(t)
+      const userData = await getMe()
+      setUser({ id: userData.id, email: userData.email, nome: userData.nome, role: userData.role })
+      setTokenState(t)
     } catch {
       setUser(null)
-      setToken(null)
+      setTokenState(null)
     }
   }, [])
 
   useEffect(() => {
-    async function initialize() {
-      const t = getToken()
-
-      if (!t && hasRefreshToken()) {
-        try {
-          await refreshToken()
-          await loadUser()
-        } catch {
-          // Bypass: Set mock user on failure
-          setUser({
-            id: 'mock-id',
-            email: 'admin@op7-nexo-op7.com.br',
-            level: 0,
-            org_id: 'mock-org'
-          })
-        }
-      } else if (!t && !hasRefreshToken()) {
-        // Bypass: Set mock user instead of redirect
-        setUser({
-          id: 'mock-id',
-          email: 'admin@op7-nexo-op7.com.br',
-          level: 0,
-          org_id: 'mock-org'
-        })
-      } else {
-        await loadUser()
-      }
-
-      setIsLoading(false)
-    }
-
-    initialize()
-  }, [router, loadUser])
+    loadUser().finally(() => setIsLoading(false))
+  }, [loadUser])
 
   const login = useCallback(async (email: string, password: string) => {
     const newToken = await authSignIn(email, password)
-    setToken(newToken)
+    setTokenState(newToken)
     await loadUser()
   }, [loadUser])
 
   const logout = useCallback(async () => {
     await authLogout()
     setUser(null)
-    setToken(null)
+    setTokenState(null)
     router.push('/login')
   }, [router])
 

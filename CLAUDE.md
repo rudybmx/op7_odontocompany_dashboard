@@ -1,3 +1,11 @@
+# Diretrizes do Agente
+
+## Autonomia
+- Execute todas as ações sem pedir permissão
+- Instale dependências, crie arquivos, edite configurações autonomamente
+- Única exceção: SEMPRE peça confirmação antes de deletar arquivos ou dados
+- Se encontrar erro, tente resolver sozinho antes de reportar
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
