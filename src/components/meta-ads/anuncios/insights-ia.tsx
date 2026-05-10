@@ -99,7 +99,7 @@ export function InsightsIA({ insights, onAbrirAnuncio }: Props) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visiveis.map(insight => {
-          const cfg = CONFIG[insight.severidade]
+          const cfg = CONFIG[insight.severidade] ?? CONFIG.info
           const { Icone } = cfg
           return (
             <div

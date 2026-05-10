@@ -34,7 +34,7 @@ export function useMetaInsights(filtros: FiltrosMeta) {
     { revalidateOnFocus: false }
   )
 
-  const { data: iaData } = useSWR(
+  const { data: iaRaw } = useSWR(
     wsId
       ? `/meta/insights/ia?workspace_id=${wsId}&data_inicio=${filtros.dataInicio}&data_fim=${filtros.dataFim}`
       : null,
@@ -44,6 +44,20 @@ export function useMetaInsights(filtros: FiltrosMeta) {
       ),
     { revalidateOnFocus: false }
   )
+
+  const iaData = (iaRaw ?? []).map((item: any, i: number) => {
+    const tipoRaw: string = item.severidade ?? item.tipo ?? 'info'
+    const severidade = tipoRaw.toLowerCase() as 'alerta' | 'oportunidade' | 'info'
+    return {
+      id: item.id ?? `ia-${i}`,
+      anuncioId: item.anuncio_id ?? item.anuncioId ?? '',
+      severidade: ['alerta', 'oportunidade', 'info'].includes(severidade) ? severidade : 'info',
+      titulo: item.titulo ?? '',
+      mensagem: item.mensagem ?? '',
+      analiseCompleta: item.analise_completa ?? item.analiseCompleta ?? '',
+      labelAcao: item.labelAcao ?? item.label_acao ?? item.acao ?? '',
+    }
+  })
 
   const data: MetaInsightsVisaoGeral | null = raw
     ? {
