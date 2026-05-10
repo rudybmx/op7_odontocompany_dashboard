@@ -357,6 +357,7 @@ export default function ContasAdsPage() {
       <div style={{
         background: 'var(--ws-glass-bg)', border: '1px solid var(--ws-glass-border)',
         borderRadius: 14, overflow: 'hidden', backdropFilter: 'blur(16px)',
+        overflowX: 'auto',
       }}>
         {carregando ? (
           <div style={{ padding: 60, textAlign: 'center' }}>
@@ -378,12 +379,13 @@ export default function ContasAdsPage() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--ws-glass-border)' }}>
+              <tr style={{ borderBottom: '1px solid var(--ws-glass-border)', background: 'rgba(0,0,0,0.03)' }}>
                 {['Plataforma', 'Account ID', 'Nome', 'Cliente', 'Período', 'Insights', 'Última Atualização', 'Ações'].map(h => (
                   <th key={h} style={{
-                    padding: '14px 18px', fontSize: 11, fontWeight: 600,
+                    padding: '10px 14px', fontSize: 11, fontWeight: 600,
                     color: 'var(--ws-text-2)', textAlign: 'left',
                     textTransform: 'uppercase', letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
                   }}>
                     {h}
                   </th>
@@ -401,7 +403,7 @@ export default function ContasAdsPage() {
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '14px 18px' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         padding: '4px 10px', borderRadius: 6,
@@ -411,24 +413,24 @@ export default function ContasAdsPage() {
                         {plat.label}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <code style={{ fontSize: 12, color: 'var(--ws-text-2)', fontFamily: 'monospace' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <code style={{ fontSize: 11, color: 'var(--ws-text-3)', fontFamily: 'monospace' }}>
                         {c.account_id}
                       </code>
                     </td>
-                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-1)', fontWeight: 500 }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 13, color: 'var(--ws-text-1)', fontWeight: 500 }}>
                       {c.nome}
                     </td>
-                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-2)' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontSize: 13, color: 'var(--ws-text-2)' }}>
                       {c.workspace_nome || '—'}
                     </td>
-                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-3)' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontSize: 13, color: 'var(--ws-text-3)' }}>
                       {c.periodo_sync_inicio ? formatarPeriodo(c.periodo_sync_inicio) : '—'}
                     </td>
-                    <td style={{ padding: '14px 18px' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '4px 10px', borderRadius: 6,
+                        padding: '3px 8px', borderRadius: 6,
                         background: insights.bg, color: insights.color,
                         fontSize: 12, fontWeight: 600,
                       }}>
@@ -439,10 +441,10 @@ export default function ContasAdsPage() {
                         {insights.label}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-3)' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontSize: 13, color: 'var(--ws-text-3)' }}>
                       {c.sincronizado_em ? formatarDataHora(c.sincronizado_em) : 'Nunca sincronizado'}
                     </td>
-                    <td style={{ padding: '14px 18px' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <button
                         style={{
                           background: 'transparent',
