@@ -16,6 +16,7 @@ interface MeResponse {
 }
 
 export async function signIn(email: string, password: string): Promise<string> {
+  console.log('[signIn] payload:', { email, senha: password })
   const data = await api.post<LoginResponse>('/auth/login', { email, senha: password })
   setToken(data.access_token)
   return data.access_token
