@@ -24,6 +24,7 @@ interface AdsAccount {
   token?: string | null
   status: 'ativo' | 'expirado' | 'erro'
   sincronizado_em?: string | null
+  periodo_sync_inicio?: string | null
 }
 
 interface MetaContaAPI {
@@ -50,10 +51,26 @@ const PLATFORM_BADGE: Record<string, { label: string; bg: string; color: string 
   tiktok: { label: 'TikTok', bg: 'rgba(105,201,208,0.15)', color: '#69C9D0' },
 }
 
-const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  ativo: { label: 'Ativo', bg: 'rgba(15,168,86,0.15)', color: 'var(--ws-green)' },
-  expirado: { label: 'Expirado', bg: 'rgba(201,168,76,0.15)', color: '#c9a84c' },
+const INSIGHTS_BADGE = {
+  com_dados: { label: 'Com dados', bg: 'rgba(15,168,86,0.15)', color: 'var(--ws-green)' },
+  aguardando: { label: 'Aguardando', bg: 'rgba(201,168,76,0.15)', color: '#c9a84c' },
   erro: { label: 'Erro', bg: 'rgba(255,92,141,0.15)', color: 'var(--ws-coral)' },
+}
+
+function insightsBadge(c: AdsAccount) {
+  if (c.status === 'erro') return INSIGHTS_BADGE.erro
+  if (c.sincronizado_em) return INSIGHTS_BADGE.com_dados
+  return INSIGHTS_BADGE.aguardando
+}
+
+function formatarDataHora(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatarPeriodo(iso: string): string {
+  const [ano, mes, dia] = iso.split('-')
+  return `desde ${dia}/${mes}/${ano}`
 }
 
 const META_ACCOUNT_STATUS: Record<number, { label: string; color: string }> = {
@@ -362,7 +379,7 @@ export default function ContasAdsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--ws-glass-border)' }}>
-                {['Plataforma', 'Account ID', 'Nome', 'Cliente', 'Status', 'Ações'].map(h => (
+                {['Plataforma', 'Account ID', 'Nome', 'Cliente', 'Período', 'Insights', 'Última Atualização', 'Ações'].map(h => (
                   <th key={h} style={{
                     padding: '14px 18px', fontSize: 11, fontWeight: 600,
                     color: 'var(--ws-text-2)', textAlign: 'left',
@@ -376,9 +393,7 @@ export default function ContasAdsPage() {
             <tbody>
               {filtradas.map(c => {
                 const plat = PLATFORM_BADGE[c.plataforma]
-                const stat = !c.sincronizado_em
-                  ? { label: 'Sincronizando...', bg: 'rgba(201,168,76,0.15)', color: '#c9a84c' }
-                  : STATUS_BADGE[c.status] || STATUS_BADGE.erro
+                const insights = insightsBadge(c)
                 return (
                   <tr
                     key={c.id}
@@ -407,19 +422,25 @@ export default function ContasAdsPage() {
                     <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-2)' }}>
                       {c.workspace_nome || '—'}
                     </td>
+                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-3)' }}>
+                      {c.periodo_sync_inicio ? formatarPeriodo(c.periodo_sync_inicio) : '—'}
+                    </td>
                     <td style={{ padding: '14px 18px' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         padding: '4px 10px', borderRadius: 6,
-                        background: stat.bg, color: stat.color,
+                        background: insights.bg, color: insights.color,
                         fontSize: 12, fontWeight: 600,
                       }}>
                         <span style={{
                           width: 6, height: 6, borderRadius: '50%',
-                          background: stat.color, flexShrink: 0,
+                          background: insights.color, flexShrink: 0,
                         }} />
-                        {stat.label}
+                        {insights.label}
                       </span>
+                    </td>
+                    <td style={{ padding: '14px 18px', fontSize: 13, color: 'var(--ws-text-3)' }}>
+                      {c.sincronizado_em ? formatarDataHora(c.sincronizado_em) : 'Nunca sincronizado'}
                     </td>
                     <td style={{ padding: '14px 18px' }}>
                       <button
