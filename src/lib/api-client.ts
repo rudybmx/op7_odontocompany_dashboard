@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+const BASE_URL = '/api/proxy'
 const TOKEN_KEY = 'op7nexo_token'
 
 export function getToken(): string | null {

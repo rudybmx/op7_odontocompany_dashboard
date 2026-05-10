@@ -161,14 +161,13 @@ export const secoesNavegacao: SecaoNavegacao[] = [
         ],
       },
       {
-        nome: "Usuarios",
-        secao: "Administracao",
+        nome: "Usuários",
+        secao: "Administração",
         chaveIcone: "UserCog",
         administrativo: true,
         abertoPadrao: false,
         itens: [
-          { nome: "Lista Usuarios", rota: "/admin/usuarios" },
-          { nome: "Novo Usuario",   rota: "/admin/usuarios/novo" },
+          { nome: "Lista Usuários", rota: "/administracao/usuarios" },
         ],
       },
     ],
