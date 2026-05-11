@@ -1,106 +1,29 @@
 'use client'
 
 import useSWR from 'swr'
+import api from '@/lib/api-client'
 import {
   Campanha, ConjuntoAnuncios, Anuncio, Criativo,
   ResumoCampanhas, FiltrosCampanhas, ObjetivoCampanha, StatusCampanha, TipoCriativo,
 } from '@/types/meta-ads-campanhas'
-import { makeFetcher, SWR_OPTS } from '@/lib/swr'
-import { MOCK_AD_ROWS } from '@/lib/mock-meta-ads'
+import { calcularScore } from '@/components/meta-ads/anuncios/score-anuncio'
 
-// ─── Raw row from get_anuncios_periodo ───────────────────────────────────────
+interface Workspace { id: string }
 
-interface AdRow {
-  org_id: string
-  account_id: string
-  meta_account_id: string
-  campaign_id: string
-  campaign_name: string
-  adset_id: string
-  adset_name: string
-  ad_id: string
-  ad_name: string
-  creative_id?: string
-  creative_url?: string
-  creative_type?: string
-  instagram_permalink_url?: string
-  objective?: string
-  primeiro_dia: string
-  ultimo_dia: string
-  dias_com_dados: number
-  investimento: string | number
-  impressoes: string | number
-  alcance: string | number
-  cliques: string | number
-  leads: number
-  leads_mensagem: number
-  leads_cadastro: number
-  frequencia: string | number
-  ctr: string | number
-  cpc: string | number
-  cpm: string | number
-  cpl: string | number
-  dias_ativo: number
-  tendencia?: string
-  score: number
-  indice_desempenho: string | number
-  status_criativo?: string
-  ad_status_calc?: string
-  cpl_medio_conta?: string | number
-  freq_media_conta?: string | number
-}
-
-// ─── Accumulator types for building hierarchy ────────────────────────────────
-
-interface AdsetAccum {
-  id: string
-  nome: string
-  ads: AdRow[]
-  investimento: number
-  impressoes: number
-  alcance: number
-  cliques: number
-  leads: number
-}
-
-interface CampanhaAccum {
-  id: string
-  nome: string
-  objective: string
-  adsets: Map<string, AdsetAccum>
-  investimento: number
-  impressoes: number
-  alcance: number
-  cliques: number
-  leads: number
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const n = (v: string | number | undefined | null): number => Number(v) || 0
-
-function weightedMetrics(investimento: number, cliques: number, impressoes: number, alcance: number, leads: number) {
-  return {
-    cpl:       leads     > 0 ? investimento / leads                 : 0,
-    ctr:       impressoes > 0 ? (cliques / impressoes) * 100        : 0,
-    cpc:       cliques   > 0 ? investimento / cliques               : 0,
-    cpm:       impressoes > 0 ? (investimento / impressoes) * 1000  : 0,
-    frequencia: alcance  > 0 ? impressoes / alcance                 : 0,
-  }
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const OBJETIVO_MAP: Record<string, ObjetivoCampanha> = {
-  OUTCOME_LEADS:         'LEAD_GENERATION',
-  LEAD_GENERATION:       'LEAD_GENERATION',
-  OUTCOME_SALES:         'CONVERSIONS',
-  CONVERSIONS:           'CONVERSIONS',
-  OUTCOME_AWARENESS:     'BRAND_AWARENESS',
-  BRAND_AWARENESS:       'BRAND_AWARENESS',
-  OUTCOME_TRAFFIC:       'TRAFFIC',
-  TRAFFIC:               'TRAFFIC',
-  OUTCOME_ENGAGEMENT:    'BRAND_AWARENESS',
-  REACH:                 'REACH',
-  VIDEO_VIEWS:           'VIDEO_VIEWS',
+  OUTCOME_LEADS:      'LEAD_GENERATION',
+  LEAD_GENERATION:    'LEAD_GENERATION',
+  OUTCOME_SALES:      'CONVERSIONS',
+  CONVERSIONS:        'CONVERSIONS',
+  OUTCOME_AWARENESS:  'BRAND_AWARENESS',
+  BRAND_AWARENESS:    'BRAND_AWARENESS',
+  OUTCOME_TRAFFIC:    'TRAFFIC',
+  TRAFFIC:            'TRAFFIC',
+  OUTCOME_ENGAGEMENT: 'BRAND_AWARENESS',
+  REACH:              'REACH',
+  VIDEO_VIEWS:        'VIDEO_VIEWS',
 }
 
 function mapObjetivo(raw?: string): ObjetivoCampanha {
@@ -108,167 +31,115 @@ function mapObjetivo(raw?: string): ObjetivoCampanha {
   return OBJETIVO_MAP[raw.toUpperCase()] ?? 'LEAD_GENERATION'
 }
 
-function adStatus(row: AdRow): StatusCampanha {
-  const s = (row.ad_status_calc || '').toUpperCase()
+function mapStatus(raw?: string): StatusCampanha {
+  const s = (raw || 'ACTIVE').toUpperCase()
   if (s === 'PAUSED') return 'PAUSED'
+  if (s === 'ARCHIVED') return 'ARCHIVED'
+  if (s === 'DELETED') return 'ARCHIVED'
   return 'ACTIVE'
 }
 
-function inferStatus(rows: AdRow[]): StatusCampanha {
-  return rows.some(r => adStatus(r) === 'ACTIVE') ? 'ACTIVE' : 'PAUSED'
+function scoreAnuncio(a: { cpl: number; ctr: number; leads: number; frequencia: number; status: StatusCampanha }): number {
+  return calcularScore({
+    cpl: a.cpl, ctr: a.ctr, leads: a.leads,
+    frequencia: a.frequencia,
+    status: a.status,
+    tendencia: 'estavel',
+  })
 }
 
-// ─── Map ad row → Anuncio ────────────────────────────────────────────────────
+// ─── Mappers ──────────────────────────────────────────────────────────────────
 
-function mapAnuncio(row: AdRow): Anuncio {
+function mapAnuncio(a: any): Anuncio {
+  const sp = a.spend ?? 0; const ld = a.leads ?? 0
+  const imp = a.impressions ?? 0; const rch = a.reach ?? 0; const cl = a.clicks ?? 0
+  const cpl = ld > 0 ? sp / ld : 0
+  const ctr = imp > 0 ? (cl / imp) * 100 : a.ctr ?? 0
+  const cpc = cl > 0 ? sp / cl : a.cpc ?? 0
+  const cpm = imp > 0 ? (sp / imp) * 1000 : a.cpm ?? 0
+  const frequencia = rch > 0 ? imp / rch : 0
+  const status = mapStatus(a.status)
+
   const criativo: Criativo = {
-    id:           row.creative_id || row.ad_id,
-    tipo:         ((row.creative_type?.toUpperCase() || 'IMAGE') as TipoCriativo),
-    thumbnailUrl: row.creative_url ?? undefined,
-    corFundo:     '#f0f0f0',
+    id: a.creative_id || a.ad_id,
+    tipo: ((a.tipo_criativo || 'IMAGE').toUpperCase() as TipoCriativo),
+    thumbnailUrl: a.image_url_hq ?? a.thumbnail_url ?? undefined,
+    corFundo: '#f0f0f0',
   }
-
-  const investimento = n(row.investimento)
-  const cliques      = n(row.cliques)
-  const impressoes   = n(row.impressoes)
-  const alcance      = n(row.alcance)
-  const leads        = n(row.leads)
-  const metrics      = weightedMetrics(investimento, cliques, impressoes, alcance, leads)
 
   return {
-    id:               row.ad_id,
-    nome:             row.ad_name,
-    status:           adStatus(row),
-    plataformas:      ['facebook', 'instagram'],
+    id: a.ad_id,
+    nome: a.nome || a.ad_id,
+    status,
+    plataformas: ['facebook', 'instagram'],
     criativo,
-    // Always provide Ads Library link as base
-    permalinkUrl:       `https://www.facebook.com/ads/library/?id=${row.ad_id}`,
-    // Only set instagramPermalink when the DB actually has a real Instagram post URL
-    instagramPermalink: row.instagram_permalink_url || undefined,
-    investimento,
-    leads,
-    cliques,
-    impressoes,
-    alcance,
-    cpl:              metrics.cpl,
-    ctr:              metrics.ctr,
-    cpc:              metrics.cpc,
-    cpm:              metrics.cpm,
-    frequencia:       metrics.frequencia,
-    indiceDesempenho: n(row.score),   // score = 0-100; indice_desempenho = 0-10 (diferente escala)
+    permalinkUrl: a.link_anuncio || `https://www.facebook.com/ads/library/?id=${a.ad_id}`,
+    investimento: sp,
+    leads: ld,
+    cliques: cl,
+    impressoes: imp,
+    alcance: rch,
+    cpl, ctr, cpc, cpm, frequencia,
+    indiceDesempenho: scoreAnuncio({ cpl, ctr, leads: ld, frequencia, status }),
   }
 }
 
-// ─── Build hierarchy from flat ad rows ───────────────────────────────────────
+function mapConjunto(adset: any): ConjuntoAnuncios {
+  const sp = adset.spend ?? 0; const ld = adset.leads ?? 0
+  const imp = adset.impressions ?? 0; const rch = adset.reach ?? 0; const cl = adset.clicks ?? 0
+  const anuncios: Anuncio[] = (adset.anuncios ?? []).map(mapAnuncio)
+  const indiceDesempenho = anuncios.length > 0
+    ? anuncios.reduce((s, a) => s + a.indiceDesempenho, 0) / anuncios.length
+    : 0
 
-function buildHierarchy(rows: AdRow[]): Campanha[] {
-  const campMap = new Map<string, CampanhaAccum>()
-
-  for (const row of rows) {
-    // Campaign
-    if (!campMap.has(row.campaign_id)) {
-      campMap.set(row.campaign_id, {
-        id: row.campaign_id,
-        nome: row.campaign_name,
-        objective: row.objective || '',
-        adsets: new Map(),
-        investimento: 0, impressoes: 0, alcance: 0, cliques: 0, leads: 0,
-      })
-    }
-    const camp = campMap.get(row.campaign_id)!
-
-    // Adset
-    if (!camp.adsets.has(row.adset_id)) {
-      camp.adsets.set(row.adset_id, {
-        id: row.adset_id,
-        nome: row.adset_name,
-        ads: [],
-        investimento: 0, impressoes: 0, alcance: 0, cliques: 0, leads: 0,
-      })
-    }
-    const adset = camp.adsets.get(row.adset_id)!
-
-    // Accumulate
-    const inv = n(row.investimento)
-    const imp = n(row.impressoes)
-    const alc = n(row.alcance)
-    const cli = n(row.cliques)
-    const lea = n(row.leads)
-
-    adset.ads.push(row)
-    adset.investimento += inv
-    adset.impressoes   += imp
-    adset.alcance      += alc
-    adset.cliques      += cli
-    adset.leads        += lea
-
-    camp.investimento  += inv
-    camp.impressoes    += imp
-    camp.alcance       += alc
-    camp.cliques       += cli
-    camp.leads         += lea
+  return {
+    id: adset.adset_id,
+    nome: adset.adset_name || adset.adset_id,
+    status: mapStatus(adset.status),
+    plataformas: ['facebook', 'instagram'],
+    investimento: sp,
+    leads: ld,
+    cpl: ld > 0 ? sp / ld : 0,
+    ctr: imp > 0 ? (cl / imp) * 100 : adset.ctr ?? 0,
+    cpc: cl > 0 ? sp / cl : adset.cpc ?? 0,
+    cpm: imp > 0 ? (sp / imp) * 1000 : adset.cpm ?? 0,
+    alcance: rch,
+    impressoes: imp,
+    frequencia: rch > 0 ? imp / rch : 0,
+    indiceDesempenho,
+    anuncios,
   }
+}
 
-  // Convert accumulators to typed objects
-  return Array.from(campMap.values()).map(camp => {
-    const conjuntos: ConjuntoAnuncios[] = Array.from(camp.adsets.values()).map(adset => {
-      const { cpl, ctr, cpc, cpm, frequencia } = weightedMetrics(
-        adset.investimento, adset.cliques, adset.impressoes, adset.alcance, adset.leads
-      )
-      const adRows = adset.ads
-      const indiceDesempenho = adRows.length > 0
-        ? adRows.reduce((s, r) => s + n(r.score), 0) / adRows.length   // score = 0-100
-        : 0
+function mapCampanha(c: any): Campanha {
+  const sp = c.spend ?? 0; const ld = c.leads ?? 0
+  const imp = c.impressions ?? 0; const rch = c.reach ?? 0; const cl = c.clicks ?? 0
+  const conjuntos: ConjuntoAnuncios[] = (c.conjuntos ?? []).map(mapConjunto)
+  const indiceDesempenho = conjuntos.length > 0
+    ? conjuntos.reduce((s, cj) => s + cj.indiceDesempenho, 0) / conjuntos.length
+    : 0
+  const nome: string = c.nome || c.campaign_id
+  const nomeAbreviado = nome.length > 35 ? nome.slice(0, 35) + '…' : nome
 
-      return {
-        id:               adset.id,
-        nome:             adset.nome,
-        status:           inferStatus(adRows),
-        plataformas:      ['facebook', 'instagram'],
-        investimento:     adset.investimento,
-        leads:            adset.leads,
-        cpl,
-        ctr,
-        cpc,
-        cpm,
-        alcance:          adset.alcance,
-        impressoes:       adset.impressoes,
-        frequencia,
-        indiceDesempenho,
-        anuncios:         adRows.map(mapAnuncio),
-      }
-    })
-
-    const { cpl, ctr, cpc, cpm, frequencia } = weightedMetrics(
-      camp.investimento, camp.cliques, camp.impressoes, camp.alcance, camp.leads
-    )
-    const indiceDesempenho = conjuntos.length > 0
-      ? conjuntos.reduce((s, cj) => s + cj.indiceDesempenho, 0) / conjuntos.length
-      : 0
-
-    const nome = camp.nome
-    const nomeAbreviado = nome.length > 35 ? nome.slice(0, 35) + '…' : nome
-
-    return {
-      id:               camp.id,
-      nome,
-      nomeAbreviado,
-      objetivo:         mapObjetivo(camp.objective),
-      status:           conjuntos.some(cj => cj.status === 'ACTIVE') ? 'ACTIVE' : 'PAUSED',
-      plataformas:      ['facebook', 'instagram'],
-      investimento:     camp.investimento,
-      leads:            camp.leads,
-      cpl,
-      ctr,
-      cpc,
-      cpm,
-      alcance:          camp.alcance,
-      impressoes:       camp.impressoes,
-      frequencia,
-      indiceDesempenho,
-      conjuntos,
-    }
-  })
+  return {
+    id: c.campaign_id,
+    nome,
+    nomeAbreviado,
+    objetivo: mapObjetivo(c.objetivo),
+    status: mapStatus(c.status),
+    plataformas: ['facebook', 'instagram'],
+    investimento: sp,
+    leads: ld,
+    cpl: ld > 0 ? sp / ld : 0,
+    ctr: imp > 0 ? (cl / imp) * 100 : c.ctr ?? 0,
+    cpc: cl > 0 ? sp / cl : c.cpc ?? 0,
+    cpm: imp > 0 ? (sp / imp) * 1000 : c.cpm ?? 0,
+    alcance: rch,
+    impressoes: imp,
+    frequencia: rch > 0 ? imp / rch : 0,
+    indiceDesempenho,
+    conjuntos,
+  }
 }
 
 // ─── Resumo ───────────────────────────────────────────────────────────────────
@@ -299,33 +170,45 @@ function computeResumo(campanhas: Campanha[]): ResumoCampanhas {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-const fetchAds = makeFetcher<AdRow[]>()
-
 export function useMetaCampanhas(filtros: FiltrosCampanhas, dataInicio: string, dataFim: string) {
-  const { data: rows, isLoading, error } = useSWR(
-    ['rpc/get_anuncios_periodo', { p_inicio: dataInicio, p_fim: dataFim }] as const,
-    fetchAds, SWR_OPTS
+  const { data: workspaces } = useSWR<Workspace[]>(
+    '/workspaces',
+    () => api.get<Workspace[]>('/workspaces'),
+    { revalidateOnFocus: false }
+  )
+  const wsId = workspaces?.[0]?.id
+
+  const hierarquiaKey = wsId
+    ? `/meta/insights/campanhas-hierarquia?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}`
+    : null
+
+  const { data: rawHierarquia, isLoading, error } = useSWR(
+    hierarquiaKey,
+    () => api.get<any[]>(hierarquiaKey!),
+    { revalidateOnFocus: false }
   )
 
-  const useMock = !isLoading && (!rows || rows.length === 0)
-  
-  let finalRows = rows ?? []
-  if (useMock) {
-    const { MOCK_CONTAS_META } = require('@/lib/mock-meta-ads')
-    const contasSelecionadas = filtros.contaIds && filtros.contaIds.length > 0 ? filtros.contaIds.length : MOCK_CONTAS_META.length
-    const ratio = contasSelecionadas / MOCK_CONTAS_META.length
+  const { data: iaRaw } = useSWR(
+    wsId ? `/meta/insights/ia?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}` : null,
+    () => api.get<any[]>(`/meta/insights/ia?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}`),
+    { revalidateOnFocus: false }
+  )
 
-    finalRows = MOCK_AD_ROWS.map(r => ({
-      ...r,
-      investimento: Number(r.investimento) * ratio,
-      leads: Math.round(Number(r.leads) * ratio),
-      cliques: Math.round(Number(r.cliques) * ratio),
-      impressoes: Math.round(Number(r.impressoes) * ratio),
-      alcance: Math.round(Number(r.alcance) * ratio),
-    })) as any as AdRow[]
-  }
+  const insightsIA = (iaRaw ?? []).map((item: any, i: number) => {
+    const tipoRaw: string = item.severidade ?? item.tipo ?? 'info'
+    const severidade = tipoRaw.toLowerCase() as 'alerta' | 'oportunidade' | 'info'
+    return {
+      id: item.id ?? `ia-${i}`,
+      anuncioId: item.anuncio_id ?? item.anuncioId ?? '',
+      severidade: ['alerta', 'oportunidade', 'info'].includes(severidade) ? severidade : 'info' as const,
+      titulo: item.titulo ?? '',
+      mensagem: item.mensagem ?? '',
+      analiseCompleta: item.analise_completa ?? item.analiseCompleta ?? '',
+      labelAcao: item.labelAcao ?? item.label_acao ?? item.acao ?? '',
+    }
+  })
 
-  let campanhas = buildHierarchy(finalRows)
+  let campanhas: Campanha[] = (rawHierarquia ?? []).map(mapCampanha)
 
   // Filters
   if (filtros.busca) {
@@ -343,7 +226,11 @@ export function useMetaCampanhas(filtros: FiltrosCampanhas, dataInicio: string, 
     campanhas = campanhas.filter(c => c.status === target)
   }
 
-  const { MOCK_INSIGHTS_IA } = require('@/lib/mock-meta-ads')
-
-  return { campanhas, resumo: computeResumo(campanhas), insightsIA: MOCK_INSIGHTS_IA, isLoading, error: error ?? null }
+  return {
+    campanhas,
+    resumo: computeResumo(campanhas),
+    insightsIA,
+    isLoading: !wsId || isLoading,
+    error: error ?? null,
+  }
 }
