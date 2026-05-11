@@ -13,9 +13,9 @@ import { ModalPreview } from './modal-preview'
 import { ModalDetalhe } from './modal-detalhe'
 import { Comparador } from './comparador'
 
-interface Props { dataInicio: string; dataFim: string }
+interface Props { dataInicio: string; dataFim: string; contaIds?: string[] }
 
-export function AbaCriativos({ dataInicio, dataFim }: Props) {
+export function AbaCriativos({ dataInicio, dataFim, contaIds = [] }: Props) {
   const [filtros, setFiltros] = useState<FiltrosCriativosType>({
     tipo: 'todos',
     status: 'todos',
@@ -27,7 +27,7 @@ export function AbaCriativos({ dataInicio, dataFim }: Props) {
   const [criativoDetalheId, setCriativoDetalheId] = useState<string | null>(null)
   const [criativoPreviewId, setCriativoPreviewId] = useState<string | null>(null)
 
-  const { criativos } = useMetaCriativos(filtros, dataInicio, dataFim)
+  const { criativos } = useMetaCriativos(filtros, dataInicio, dataFim, contaIds)
   const insights = useInsightsCriativos(criativos)
 
   const criativoDetalhe = criativos.find(c => c.id === criativoDetalheId) ?? null

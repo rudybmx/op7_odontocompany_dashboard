@@ -1,51 +1,54 @@
 'use client'
 
 import useSWR from 'swr'
+import api from '@/lib/api-client'
 import { Criativo, FiltrosCriativos, TipoCriativo, StatusCriativo } from '@/types/meta-ads-criativos'
-import { makeFetcher, SWR_OPTS } from '@/lib/swr'
-import { MOCK_CRIATIVOS_ROWS } from '@/lib/mock-meta-ads'
 
-interface CriativosCompletoRow {
+interface Workspace { id: string }
+
+interface CriativoRow {
   creative_id: string
-  creative_type?: string
-  status_criativo?: string
-  creative_url?: string
+  tipo_criativo: string
+  thumbnail_url: string | null
+  image_url_hq: string | null
+  link_anuncio: string | null
+  status: string | null
+  total_anuncios: number
+  total_campanhas: number
   dias_ativo: number
-  campanhas: number
+  spend: number
   leads: number
-  investimento: string | number
-  cpl: string | number
-  ctr: string | number
-  cpc: string | number
-  cpm: string | number
-  alcance: number
-  impressoes: string | number
-  frequencia: string | number
+  impressions: number
+  reach: number
+  clicks: number
+  ctr: number
+  cpc: number
+  cpm: number
+  cpl: number
+  frequencia: number
   score: number
 }
 
-const fetchCriativos = makeFetcher<CriativosCompletoRow[]>()
-
-function mapCriativo(row: CriativosCompletoRow): Criativo {
+function mapCriativo(row: CriativoRow): Criativo {
   return {
     id:            row.creative_id,
     nome:          row.creative_id,
-    tipo:          ((row.creative_type || 'IMAGE') as TipoCriativo),
-    status:        ((row.status_criativo || 'novo') as StatusCriativo),
+    tipo:          ((row.tipo_criativo || 'IMAGE') as TipoCriativo),
+    status:        ((row.status || 'novo') as StatusCriativo),
     corFundo:      '#f0f0f0',
-    thumbnailUrl:  row.creative_url,
+    thumbnailUrl:  row.image_url_hq ?? row.thumbnail_url ?? undefined,
     diasAtivo:     row.dias_ativo,
-    campanhas:     row.campanhas,
+    campanhas:     row.total_campanhas,
     campanhasDetalhe: [],
     leads:         row.leads,
-    investimento:  Number(row.investimento),
-    cpl:           Number(row.cpl),
-    ctr:           Number(row.ctr),
-    cpc:           Number(row.cpc),
-    cpm:           Number(row.cpm),
-    alcance:       row.alcance,
-    impressoes:    Number(row.impressoes),
-    frequencia:    Number(row.frequencia),
+    investimento:  row.spend,
+    cpl:           row.cpl,
+    ctr:           row.ctr,
+    cpc:           row.cpc,
+    cpm:           row.cpm,
+    alcance:       row.reach,
+    impressoes:    row.impressions,
+    frequencia:    row.frequencia,
     hookRate:      null,
     holdRate:      null,
     videoViews3s:  null,
@@ -55,30 +58,34 @@ function mapCriativo(row: CriativosCompletoRow): Criativo {
   }
 }
 
-export function useMetaCriativos(filtros: FiltrosCriativos, dataInicio: string, dataFim: string) {
+export function useMetaCriativos(
+  filtros: FiltrosCriativos,
+  dataInicio: string,
+  dataFim: string,
+  contaIds: string[] = [],
+) {
+  const { data: workspaces } = useSWR<Workspace[]>(
+    '/workspaces',
+    () => api.get<Workspace[]>('/workspaces'),
+    { revalidateOnFocus: false }
+  )
+  const wsId = workspaces?.[0]?.id
+
+  const contaIdsParam = contaIds.length
+    ? `&conta_ids=${contaIds.join(',')}`
+    : ''
+
+  const key = wsId
+    ? `/meta/insights/criativos?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}${contaIdsParam}`
+    : null
+
   const { data: rows, isLoading, error } = useSWR(
-    ['rpc/get_criativos_periodo', { p_inicio: dataInicio, p_fim: dataFim }] as const,
-    fetchCriativos, SWR_OPTS
+    key,
+    () => api.get<CriativoRow[]>(key!),
+    { revalidateOnFocus: false }
   )
 
-  const useMock = !isLoading && (!rows || rows.length === 0)
-  
-  let finalRows = rows ?? []
-  if (useMock) {
-    const { MOCK_CONTAS_META } = require('@/lib/mock-meta-ads')
-    const contasSelecionadas = filtros.contaIds && filtros.contaIds.length > 0 ? filtros.contaIds.length : MOCK_CONTAS_META.length
-    const ratio = contasSelecionadas / MOCK_CONTAS_META.length
-
-    finalRows = MOCK_CRIATIVOS_ROWS.map(r => ({
-      ...r,
-      investimento: Number(r.investimento) * ratio,
-      leads: Math.round(Number(r.leads) * ratio),
-      impressoes: Math.round(Number(r.impressoes) * ratio),
-      alcance: Math.round(Number(r.alcance) * ratio),
-    })) as any as CriativosCompletoRow[]
-  }
-
-  let resultado = finalRows.map(mapCriativo)
+  let resultado = (rows ?? []).map(mapCriativo)
 
   if (filtros.tipo !== 'todos') {
     resultado = resultado.filter(c => c.tipo === filtros.tipo)
