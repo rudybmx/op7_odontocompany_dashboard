@@ -148,6 +148,19 @@ export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, d
     ? [{ alcance: data.alcance_total, frequencia_media: data.frequencia_media }]
     : []
 
+  const dispositivos: DadosDispositivo[] = (data?.dispositivos ?? []).map((d: any) => ({
+    tipo:       d.tipo as DadosDispositivo['tipo'],
+    percentual: d.percentual,
+    leads:      d.leads,
+    cpl:        d.cpl,
+  }))
+
+  const sistemaOperacional: DadosSO[] = (data?.sistema_operacional ?? []).map((s: any) => ({
+    nome:       s.nome,
+    percentual: s.percentual,
+    cpl:        s.cpl,
+  }))
+
   const kpi = demograficos.length > 0 || placements.length > 0
     ? computeKpi(demograficos, [], accountRows, placements, [])
     : KPI_VAZIO
@@ -155,8 +168,8 @@ export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, d
   return {
     demograficos,
     placements,
-    dispositivos:       DISPOSITIVOS_FIXO,
-    sistemaOperacional: SO_FIXO,
+    dispositivos:       dispositivos.length > 0 ? dispositivos : DISPOSITIVOS_FIXO,
+    sistemaOperacional: sistemaOperacional.length > 0 ? sistemaOperacional : SO_FIXO,
     heatmapHoras:       [] as DadosHora[],
     cidades:            [] as DadosCidade[],
     kpi,
