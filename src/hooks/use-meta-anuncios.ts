@@ -42,6 +42,7 @@ function mapAnuncio(row: AnuncioRow): Anuncio {
     plataformas:   ['facebook'] as PlataformaAnuncio[],
     corFundo:      '#f0f0f0',
     thumbnailUrl:  row.image_url_hq ?? row.thumbnail_url ?? undefined,
+    permalinkUrl:  row.link_anuncio ?? undefined,
     investimento:  row.spend,
     leads:         row.leads,
     leadsMensagem: 0,

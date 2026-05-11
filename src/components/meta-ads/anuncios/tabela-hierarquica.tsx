@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, Fragment } from 'react'
-import { ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react'
+import { ChevronRight, ChevronDown, AlertTriangle, ExternalLink } from 'lucide-react'
 import type { Anuncio, StatusAnuncio, TipoAnuncio } from '@/types/meta-ads-anuncios'
 import { formatarMoeda, formatarNumeroCompacto } from '@/lib/formatar'
+import { proxyImagem } from '@/lib/imagem-proxy'
 
 interface Props {
   anuncios: Anuncio[]
@@ -87,9 +88,36 @@ export function TabelaHierarquica({ anuncios, agrupar, onAbrirAnuncio }: Props) 
         onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
       >
         {!isFlat && <td style={{ width: 32 }} />}
+        <td style={{ padding: '6px 4px 6px 10px', width: 36 }}>
+          {a.thumbnailUrl ? (
+            <img
+              src={proxyImagem(a.thumbnailUrl)}
+              alt=""
+              style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', display: 'block', background: '#f0f0f0' }}
+              referrerPolicy="no-referrer"
+              loading="lazy"
+            />
+          ) : (
+            <div style={{ width: 32, height: 32, borderRadius: 4, background: 'rgba(0,0,0,0.06)' }} />
+          )}
+        </td>
         <td style={{ padding: isFlat ? '9px 10px' : '9px 10px 9px 24px' }}>
-          <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--ws-text-1)' }}>
-            {a.nome.length > 55 ? a.nome.slice(0, 55) + '...' : a.nome}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 400, color: 'var(--ws-text-1)' }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+              {a.nome.length > 55 ? a.nome.slice(0, 55) + '...' : a.nome}
+            </span>
+            {a.permalinkUrl && (
+              <a
+                href={a.permalinkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ display: 'inline-flex', flexShrink: 0, color: 'var(--ws-text-3)', opacity: 0.6 }}
+                title="Ver anúncio"
+              >
+                <ExternalLink size={11} />
+              </a>
+            )}
           </div>
           {isFlat && (
             <div style={{ fontSize: 10, color: 'var(--ws-text-3)', marginTop: 2 }}>
@@ -148,6 +176,7 @@ export function TabelaHierarquica({ anuncios, agrupar, onAbrirAnuncio }: Props) 
         <thead>
           <tr style={{ borderBottom: '1px solid var(--ws-divider)' }}>
             {agrupar && <th style={{ ...thStyle, textAlign: 'left', width: 32 }} />}
+            <th style={{ ...thStyle, width: 36 }} />
             <th style={{ ...thStyle, textAlign: 'left', minWidth: 260 }}>Anúncio / {agrupar ? 'Campanha' : 'Config'}</th>
             <th style={{ ...thStyle, textAlign: 'left' }}>Tipo</th>
             <th style={{ ...thStyle, textAlign: 'left' }}>Status</th>

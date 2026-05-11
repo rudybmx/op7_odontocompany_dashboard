@@ -14,6 +14,7 @@ export interface Anuncio {
   plataformas: PlataformaAnuncio[]
   corFundo: string
   thumbnailUrl?: string
+  permalinkUrl?: string
 
   // métricas
   investimento: number
