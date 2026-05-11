@@ -168,8 +168,16 @@ export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, d
     intensidade: h.intensidade ?? 0,
   }))
 
+  const cidades: DadosCidade[] = (data?.cidades ?? []).map((c: any) => ({
+    nome:         c.nome,
+    leads:        c.leads,
+    investimento: c.spend,
+    cpl:          c.cpl,
+    percentualLeads: c.percentual,
+  }))
+
   const kpi = demograficos.length > 0 || placements.length > 0
-    ? computeKpi(demograficos, [], accountRows, placements, heatmapHoras)
+    ? computeKpi(demograficos, cidades, accountRows, placements, heatmapHoras)
     : KPI_VAZIO
 
   return {
@@ -178,7 +186,7 @@ export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, d
     dispositivos:       dispositivos.length > 0 ? dispositivos : DISPOSITIVOS_FIXO,
     sistemaOperacional: sistemaOperacional.length > 0 ? sistemaOperacional : SO_FIXO,
     heatmapHoras:       heatmapHoras,
-    cidades:            [] as DadosCidade[],
+    cidades,
     kpi,
     isLoading: !wsId || isLoading,
     error: error ?? null,
