@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import api from '@/lib/api-client'
 import type {
   DadosDemograficos,
   DadosPlacement,
@@ -11,47 +12,13 @@ import type {
   KpiPublicos,
   FiltrosPublicos,
 } from '@/types/meta-ads-publicos'
-import { makeFetcher, SWR_OPTS } from '@/lib/swr'
-import { 
-  MOCK_DEMOGRAPHICS_ROWS, 
-  MOCK_GEO_ROWS, 
-  MOCK_ACCOUNT_SUMMARY_ROWS,
-  MOCK_PLACEMENTS,
-  MOCK_DISPOSITIVOS,
-  MOCK_SO_ROWS,
-  MOCK_HEATMAP
-} from '@/lib/mock-meta-ads'
 
-interface DemographicsRow {
-  age: string
-  gender: string
-  leads: number
-  investimento: string | number
-  cpl: string | number
-  ctr: string | number
-  alcance: number
-  impressoes: number
-}
-
-interface GeoRow {
-  region: string
-  leads: number
-  investimento: string | number
-  cpl: string | number
-}
+interface Workspace { id: string }
 
 interface AccountSummaryRow {
   alcance: number
   frequencia_media: string | number
 }
-
-const fetchDemo    = makeFetcher<DemographicsRow[]>()
-const fetchGeo     = makeFetcher<GeoRow[]>()
-const fetchAccount = makeFetcher<AccountSummaryRow[]>()
-
-// ─── Static fallbacks for unavailable data ────────────────────────────────────
-
-const PLACEMENTS_VAZIO: DadosPlacement[] = []
 
 const DISPOSITIVOS_FIXO: DadosDispositivo[] = [
   { tipo: 'mobile',  percentual: 85, leads: 0, cpl: 0 },
@@ -65,8 +32,6 @@ const SO_FIXO: DadosSO[] = [
   { nome: 'Windows', percentual: 3,  cpl: 0 },
 ]
 
-const HEATMAP_VAZIO: DadosHora[] = []
-
 const KPI_VAZIO: KpiPublicos = {
   alcanceTotal: 0, frequenciaMedia: 0,
   melhorFaixaCpl: 'N/D', melhorFaixaValor: 0,
@@ -75,30 +40,22 @@ const KPI_VAZIO: KpiPublicos = {
   melhorCidade: 'N/D', melhorCidadeLeads: 0,
 }
 
-// ─── Mappers ──────────────────────────────────────────────────────────────────
-
-function mapDemografico(row: DemographicsRow): DadosDemograficos {
-  return {
-    faixa:        row.age.replace('-', '–'),
-    genero:       row.gender === 'male' ? 'masc' : 'fem',
-    leads:        row.leads,
-    investimento: Number(row.investimento),
-    cpl:          Number(row.cpl),
-    ctr:          Number(row.ctr),
-    alcance:      row.alcance,
-    impressoes:   row.impressoes,
-  }
+const COR_MAP: Record<string, string> = {
+  instagram:        '#E1306C',
+  facebook:         '#1877F2',
+  messenger:        '#0084FF',
+  audience_network: '#7A5AF8',
 }
 
-function mapCidades(rows: GeoRow[]): DadosCidade[] {
-  const totalLeads = rows.reduce((s, r) => s + r.leads, 0)
-  return rows.map(row => ({
-    nome:            row.region,
-    leads:           row.leads,
-    investimento:    Number(row.investimento),
-    cpl:             Number(row.cpl),
-    percentualLeads: totalLeads > 0 ? (row.leads / totalLeads) * 100 : 0,
-  }))
+function corPlataforma(plataforma: string): string {
+  return COR_MAP[plataforma] ?? '#7A5AF8'
+}
+
+function normalizePlataforma(p: string): DadosPlacement['plataforma'] {
+  const valid = ['facebook', 'instagram', 'whatsapp', 'audience_network'] as const
+  return (valid as readonly string[]).includes(p)
+    ? p as DadosPlacement['plataforma']
+    : 'facebook'
 }
 
 function computeKpi(
@@ -146,46 +103,64 @@ function computeKpi(
   }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, dataFim: string, contaIds: string[] = []) {
+  const { data: workspaces } = useSWR<Workspace[]>(
+    '/workspaces',
+    () => api.get<Workspace[]>('/workspaces'),
+    { revalidateOnFocus: false }
+  )
+  const wsId = workspaces?.[0]?.id
 
-export function useMetaPublicos(_filtros: FiltrosPublicos, dataInicio: string, dataFim: string) {
-  const r1 = useSWR(['rpc/get_demograficos_periodo', { p_inicio: dataInicio, p_fim: dataFim }] as const, fetchDemo, SWR_OPTS)
-  const r2 = useSWR(['rpc/get_geo_periodo', { p_inicio: dataInicio, p_fim: dataFim }] as const, fetchGeo, SWR_OPTS)
-  const r3 = useSWR(
-    ['vw_meta_account_summary', { select: 'alcance,frequencia_media' }] as const,
-    fetchAccount, SWR_OPTS
+  const contaIdsParam = contaIds.length ? `&conta_ids=${contaIds.join(',')}` : ''
+  const key = wsId
+    ? `/meta/insights/publicos?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}${contaIdsParam}`
+    : null
+
+  const { data, isLoading, error } = useSWR(
+    key,
+    () => api.get<any>(key!),
+    { revalidateOnFocus: false }
   )
 
-  const isLoading = r1.isLoading || r2.isLoading || r3.isLoading
-  const error     = r1.error ?? r2.error ?? r3.error ?? null
+  const demograficos: DadosDemograficos[] = (data?.demograficos ?? []).map((row: any) => ({
+    faixa:       row.faixa.replace('-', '–'),
+    genero:      row.genero === 'male' ? 'masc' : (row.genero === 'female' ? 'fem' : row.genero),
+    leads:       row.leads,
+    investimento: row.spend,
+    cpl:         row.cpl,
+    ctr:         row.ctr,
+    alcance:     row.alcance,
+    impressoes:  row.impressoes,
+  }))
 
-  const useMock = !isLoading && (!r1.data || r1.data.length === 0)
-  
-  const finalDemo = useMock ? MOCK_DEMOGRAPHICS_ROWS : (r1.data ?? [])
-  const finalGeo  = useMock ? MOCK_GEO_ROWS : (r2.data ?? [])
-  const finalAcct = useMock ? MOCK_ACCOUNT_SUMMARY_ROWS : (r3.data ?? [])
+  const placements: DadosPlacement[] = (data?.placements ?? []).map((row: any) => ({
+    nome:        row.nome,
+    plataforma:  normalizePlataforma(row.plataforma),
+    leads:       row.leads,
+    investimento: row.spend,
+    cpl:         row.cpl,
+    percentual:  row.percentual,
+    ctr:         0,
+    cor:         corPlataforma(row.plataforma),
+  }))
 
-  const demograficos = finalDemo.map(mapDemografico)
-  const cidades      = mapCidades(finalGeo as any)
-  
-  const placements   = useMock ? MOCK_PLACEMENTS : PLACEMENTS_VAZIO
-  const dispositivos = useMock ? MOCK_DISPOSITIVOS : DISPOSITIVOS_FIXO
-  const so           = useMock ? MOCK_SO_ROWS : SO_FIXO
-  const heatmap      = useMock ? MOCK_HEATMAP : HEATMAP_VAZIO
+  const accountRows: AccountSummaryRow[] = data
+    ? [{ alcance: data.alcance_total, frequencia_media: data.frequencia_media }]
+    : []
 
-  const kpi          = (finalDemo.length > 0 && finalGeo.length > 0 && finalAcct.length > 0)
-    ? computeKpi(demograficos, cidades, finalAcct as any, placements as any, heatmap as any)
+  const kpi = demograficos.length > 0 || placements.length > 0
+    ? computeKpi(demograficos, [], accountRows, placements, [])
     : KPI_VAZIO
 
   return {
     demograficos,
-    placements:         useMock ? MOCK_PLACEMENTS : PLACEMENTS_VAZIO,
-    dispositivos:       useMock ? MOCK_DISPOSITIVOS : DISPOSITIVOS_FIXO,
-    sistemaOperacional: useMock ? MOCK_SO_ROWS : SO_FIXO,
-    heatmapHoras:       useMock ? MOCK_HEATMAP : HEATMAP_VAZIO,
-    cidades,
+    placements,
+    dispositivos:       DISPOSITIVOS_FIXO,
+    sistemaOperacional: SO_FIXO,
+    heatmapHoras:       [] as DadosHora[],
+    cidades:            [] as DadosCidade[],
     kpi,
-    isLoading,
-    error,
+    isLoading: !wsId || isLoading,
+    error: error ?? null,
   }
 }

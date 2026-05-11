@@ -14,9 +14,9 @@ import { useMetaPublicos } from '@/hooks/use-meta-publicos'
 import { useInsightsPublicos } from '@/hooks/use-insights-publicos'
 import type { FiltrosPublicos as FiltrosPublicosTipo } from '@/types/meta-ads-publicos'
 
-interface Props { dataInicio: string; dataFim: string }
+interface Props { dataInicio: string; dataFim: string; contaIds?: string[] }
 
-export function AbaPublicos({ dataInicio, dataFim }: Props) {
+export function AbaPublicos({ dataInicio, dataFim, contaIds = [] }: Props) {
   const [filtros, setFiltros] = useState<FiltrosPublicosTipo>({
     campanha: 'todas',
     conjunto: 'todos',
@@ -24,7 +24,7 @@ export function AbaPublicos({ dataInicio, dataFim }: Props) {
     metrica: 'leads',
   })
 
-  const dados = useMetaPublicos(filtros, dataInicio, dataFim)
+  const dados = useMetaPublicos(filtros, dataInicio, dataFim, contaIds)
   const insights = useInsightsPublicos(
     dados?.demograficos ?? [],
     dados?.placements ?? [],
