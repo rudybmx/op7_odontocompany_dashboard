@@ -5,6 +5,7 @@ import { ImageIcon, Video, Layers, Play, ChevronLeft, ChevronRight, ExternalLink
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import type { CriativoTop } from '@/types/meta-ads'
 import { formatarNumero, formatarMoeda, formatarPorcentagem } from '@/lib/formatar'
+import { proxyImagem } from '@/lib/imagem-proxy'
 
 interface TopCriativosProps {
   criativos: CriativoTop[]
@@ -71,7 +72,7 @@ function CardMidia({ criativo, indice }: CardMidiaProps) {
       {/* Imagem */}
       {imgSrc ? (
         <img
-          src={imgSrc}
+          src={proxyImagem(imgSrc)}
           alt={criativo.nome}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           referrerPolicy="no-referrer"
