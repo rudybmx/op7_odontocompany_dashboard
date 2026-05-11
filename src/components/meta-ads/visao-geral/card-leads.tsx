@@ -99,13 +99,14 @@ export function CardLeads({ contas, leadsAnterior }: CardLeadsProps) {
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', borderTop: '1px solid var(--ws-divider, rgba(14,20,42,0.06))', paddingTop: '8px', marginTop: '10px' }}>
         {[
-          { label: 'WhatsApp', value: totalWhatsapp },
-          { label: 'Instagram', value: totalInstagram },
-          { label: 'Formulário', value: totalFormulario },
+          { label: 'Conv. WhatsApp', value: totalWhatsapp,  title: 'Conversas iniciadas via anúncio (7 dias)' },
+          { label: 'DM Instagram',   value: totalInstagram, title: 'Mensagens diretas via anúncio' },
+          { label: 'Formulário',     value: totalFormulario, title: 'Leads via formulário nativo Meta' },
         ].map((item) => (
-          <div key={item.label} style={{
+          <div key={item.label} title={item.title} style={{
             textAlign: 'center',
             minWidth: 0,
+            cursor: 'help',
           }}>
             <div style={{ fontSize: '8px', color: 'var(--ws-text-3, #8892b0)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {item.label}
