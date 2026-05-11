@@ -62,6 +62,9 @@ export interface CriativoTop {
   nome: string
   tipo: 'IMAGE' | 'VIDEO' | 'CAROUSEL'
   thumbnailUrl?: string
+  imageUrlHq?: string
+  linkAnuncio?: string
+  carouselItems?: Array<{ picture?: string; video_id?: string; link?: string }>
   leads: number
   ctr: number
   cpl: number

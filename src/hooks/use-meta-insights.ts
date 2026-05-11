@@ -100,8 +100,11 @@ export function useMetaInsights(filtros: FiltrosMeta) {
         topCriativos: (raw.top_criativos ?? []).map((c: any): CriativoTop => ({
           id: c.id,
           nome: c.nome ?? '',
-          tipo: 'IMAGE',
-          thumbnailUrl: c.thumbnail_url ?? undefined,
+          tipo: (c.tipo as 'IMAGE' | 'VIDEO' | 'CAROUSEL') ?? 'IMAGE',
+          thumbnailUrl: c.image_url_hq ?? c.thumbnail_url ?? undefined,
+          imageUrlHq: c.image_url_hq ?? undefined,
+          linkAnuncio: c.link_anuncio ?? undefined,
+          carouselItems: c.carousel_items ?? [],
           leads: c.leads ?? 0,
           ctr: c.ctr ?? 0,
           cpl: c.cpl ?? 0,
