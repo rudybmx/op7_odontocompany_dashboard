@@ -1,89 +1,92 @@
 'use client'
 
 import useSWR from 'swr'
+import api from '@/lib/api-client'
 import { Anuncio, FiltrosAnuncios, TipoAnuncio, StatusAnuncio, PlataformaAnuncio } from '@/types/meta-ads-anuncios'
-import { makeFetcher, SWR_OPTS } from '@/lib/swr'
-import { MOCK_AD_ROWS } from '@/lib/mock-meta-ads'
 
-interface AdsCompletoRow {
+interface Workspace { id: string }
+
+interface AnuncioRow {
   ad_id: string
-  ad_name: string
-  campaign_name: string
+  adset_id: string
   adset_name: string
-  creative_type?: string
-  ad_status_calc?: string
-  creative_url?: string
-  investimento: string | number
+  campaign_id: string
+  nome: string
+  status: string
+  tipo_criativo: string
+  thumbnail_url: string | null
+  image_url_hq: string | null
+  link_anuncio: string | null
+  spend: number
   leads: number
-  leads_mensagem: number
-  leads_cadastro: number
-  cpl: string | number
-  ctr: string | number
-  cpc: string | number
-  cpm: string | number
-  alcance: number
-  impressoes: number
-  frequencia: string | number
+  impressions: number
+  reach: number
+  clicks: number
+  ctr: number
+  cpc: number
+  cpm: number
+  cpl: number
+  frequencia: number
   score: number
-  tendencia?: string
   dias_ativo: number
 }
 
-const fetchAds = makeFetcher<AdsCompletoRow[]>()
-
-function mapAnuncio(row: AdsCompletoRow): Anuncio {
+function mapAnuncio(row: AnuncioRow): Anuncio {
   return {
     id:            row.ad_id,
-    nome:          row.ad_name,
-    campanhaNome:  row.campaign_name,
+    nome:          row.nome,
+    campanhaNome:  row.campaign_id,
     conjuntoNome:  row.adset_name,
-    tipo:          ((row.creative_type || 'IMAGE') as TipoAnuncio),
-    status:        ((row.ad_status_calc || 'ACTIVE') as StatusAnuncio),
+    tipo:          ((row.tipo_criativo || 'IMAGE') as TipoAnuncio),
+    status:        ((row.status || 'ACTIVE') as StatusAnuncio),
     plataformas:   ['facebook'] as PlataformaAnuncio[],
     corFundo:      '#f0f0f0',
-    thumbnailUrl:  row.creative_url,
-    investimento:  Number(row.investimento),
+    thumbnailUrl:  row.image_url_hq ?? row.thumbnail_url ?? undefined,
+    investimento:  row.spend,
     leads:         row.leads,
-    leadsMensagem: row.leads_mensagem,
-    leadsCadastro: row.leads_cadastro,
-    cpl:           Number(row.cpl),
-    ctr:           Number(row.ctr),
-    cpc:           Number(row.cpc),
-    cpm:           Number(row.cpm),
-    alcance:       row.alcance,
-    impressoes:    row.impressoes,
-    frequencia:    Number(row.frequencia),
+    leadsMensagem: 0,
+    leadsCadastro: 0,
+    cpl:           row.cpl,
+    ctr:           row.ctr,
+    cpc:           row.cpc,
+    cpm:           row.cpm,
+    alcance:       row.reach,
+    impressoes:    row.impressions,
+    frequencia:    row.frequencia,
     score:         row.score,
-    tendencia:     (row.tendencia as Anuncio['tendencia']) || 'estavel',
+    tendencia:     'estavel',
     diasAtivo:     row.dias_ativo,
   }
 }
 
-export function useMetaAnuncios(filtros: FiltrosAnuncios, dataInicio: string, dataFim: string) {
+export function useMetaAnuncios(
+  filtros: FiltrosAnuncios,
+  dataInicio: string,
+  dataFim: string,
+  contaIds: string[] = [],
+) {
+  const { data: workspaces } = useSWR<Workspace[]>(
+    '/workspaces',
+    () => api.get<Workspace[]>('/workspaces'),
+    { revalidateOnFocus: false }
+  )
+  const wsId = workspaces?.[0]?.id
+
+  const contaIdsParam = contaIds.length
+    ? `&conta_ids=${contaIds.join(',')}`
+    : ''
+
+  const key = wsId
+    ? `/meta/insights/anuncios?workspace_id=${wsId}&data_inicio=${dataInicio}&data_fim=${dataFim}${contaIdsParam}`
+    : null
+
   const { data: rows, isLoading, error } = useSWR(
-    ['rpc/get_anuncios_periodo', { p_inicio: dataInicio, p_fim: dataFim }] as const,
-    fetchAds, SWR_OPTS
+    key,
+    () => api.get<AnuncioRow[]>(key!),
+    { revalidateOnFocus: false }
   )
 
-  const useMock = !isLoading && (!rows || rows.length === 0)
-  
-  let finalRows = rows ?? []
-  if (useMock) {
-    const { MOCK_CONTAS_META } = require('@/lib/mock-meta-ads')
-    const contasSelecionadas = filtros.contaIds && filtros.contaIds.length > 0 ? filtros.contaIds.length : MOCK_CONTAS_META.length
-    const ratio = contasSelecionadas / MOCK_CONTAS_META.length
-
-    finalRows = MOCK_AD_ROWS.map(r => ({
-      ...r,
-      investimento: Number(r.investimento) * ratio,
-      leads: Math.round(Number(r.leads) * ratio),
-      cliques: Math.round(Number(r.cliques) * ratio),
-      impressoes: Math.round(Number(r.impressoes) * ratio),
-      alcance: Math.round(Number(r.alcance) * ratio),
-    })) as any as AdsCompletoRow[]
-  }
-
-  let resultado = finalRows.map(mapAnuncio)
+  let resultado = (rows ?? []).map(mapAnuncio)
 
   if (filtros.campanha !== 'todas') {
     resultado = resultado.filter(a => a.campanhaNome.includes(filtros.campanha))
@@ -108,5 +111,4 @@ export function useMetaAnuncios(filtros: FiltrosAnuncios, dataInicio: string, da
   return { anuncios: resultado, total: resultado.length, isLoading, error: error ?? null }
 }
 
-// Empty — campaign names are derived dynamically from the hook result
 export const campanhasDisponiveis: string[] = []

@@ -11,9 +11,9 @@ import { ModalAnuncio } from './modal-anuncio'
 import { useMetaAnuncios } from '@/hooks/use-meta-anuncios'
 import { useInsightsIA } from '@/hooks/use-insights-ia'
 
-interface Props { dataInicio: string; dataFim: string }
+interface Props { dataInicio: string; dataFim: string; contaIds?: string[] }
 
-export function AbaAnuncios({ dataInicio, dataFim }: Props) {
+export function AbaAnuncios({ dataInicio, dataFim, contaIds = [] }: Props) {
   const [filtros, setFiltros] = useState<FiltrosAnuncios>({
     campanha: 'todas',
     status: 'todos',
@@ -24,7 +24,7 @@ export function AbaAnuncios({ dataInicio, dataFim }: Props) {
   const [agrupar, setAgrupar] = useState(true)
   const [anuncioAbertoId, setAnuncioAbertoId] = useState<string | null>(null)
 
-  const { anuncios } = useMetaAnuncios(filtros, dataInicio, dataFim)
+  const { anuncios } = useMetaAnuncios(filtros, dataInicio, dataFim, contaIds)
   const { insights } = useInsightsIA()
 
   const anuncioAberto = anuncios.find(a => a.id === anuncioAbertoId) ?? null

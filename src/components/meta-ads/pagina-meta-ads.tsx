@@ -123,7 +123,7 @@ export function PaginaMetaAds() {
 
       {abaAtiva === 'Visão geral' && <VisaoGeral filtros={filtros} />}
       {abaAtiva === 'Campanhas' && <AbaCampanhas dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} contaIds={filtros.contaIds} />}
-      {abaAtiva === 'Anúncios' && <AbaAnuncios dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} />}
+      {abaAtiva === 'Anúncios' && <AbaAnuncios dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} contaIds={filtros.contaIds} />}
       {abaAtiva === 'Criativos' && <AbaCriativos dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} />}
       {abaAtiva === 'Públicos' && <AbaPublicos dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} />}
     </div>
